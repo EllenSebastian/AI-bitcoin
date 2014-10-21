@@ -2,6 +2,8 @@ from sklearn.linear_model import SGDClassifier
 from sklearn import linear_model
 import numpy as np
 
+
+
 def SGD_example():
 	X = np.array([[-1, -1], [-2, -1], [1, 1], [2, 1]])
 	Y = np.array([1, 1, 2, 2])
@@ -11,6 +13,8 @@ def SGD_example():
 
 
 # return an array of features 
+# [yesterday's price, 100 past days price, [#buys/#sells] in past day, avg size of sells in past day, 
+# avg size of buys in past day , frequency of buys, frequency of sells, sentiment score]
 def get_features(timestamp):
 
 
