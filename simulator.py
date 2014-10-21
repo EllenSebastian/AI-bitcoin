@@ -1,11 +1,13 @@
 from sklearn.linear_model import SGDClassifier
 from sklearn import linear_model
 import numpy as np
-X = np.array([[-1, -1], [-2, -1], [1, 1], [2, 1]])
-Y = np.array([1, 1, 2, 2])
-clf = linear_model.SGDClassifier()
-clf.fit(X, Y)
-print(clf.predict([[-0.8, -1]]))
+
+def SGD_example():
+	X = np.array([[-1, -1], [-2, -1], [1, 1], [2, 1]])
+	Y = np.array([1, 1, 2, 2])
+	clf = linear_model.SGDClassifier()
+	clf.fit(X, Y)
+	print(clf.predict([[-0.8, -1]]))
 
 
 # return an array of features 
