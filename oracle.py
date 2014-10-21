@@ -49,11 +49,13 @@ all_features_clean, Y_clean = util.remove_nones(all_features, Y)
 # run SGD
 Y_clean = np.array(Y_clean, dtype=np.dtype('f'))
 all_features_clean = np.array(all_features_clean, dtype=np.dtype('f'))
-clf = linear_model.SGDClassifier()
-clf.fit(all_features_clean, Y_clean)
-print(clf.predict([[-0.8, -1]]))
+reg = linear_model.LinearRegression()
+reg.fit(all_features_clean, Y_clean)
+print reg.predict(all_features_clean[0:1])
+print Y_clean[0]
 
 
+testing_size = 100
 with open('./data/market-price.txt', 'r') as pricefile:
     data = []
     for line in pricefile:
