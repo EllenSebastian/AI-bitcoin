@@ -7,6 +7,7 @@ from datetime import timedelta
 from datetime import datetime
 from sklearn import linear_model
 from datetime import timedelta
+from sklearn.cross_validation import KFold
 
 non_price_inputs =  ['avg-confirmation-time.txt', 'estimated-transaction-volume.txt', 'my-wallet-transaction-volume.txt', 'total-bitcoins.txt', 
              'bitcoin-days-destroyed-cumulative.txt','hash-rate.txt', 'n-orphaned-blocks.txt','trade-volume.txt', 'bitcoin-days-destroyed.txt','market-cap.txt', 
@@ -46,27 +47,39 @@ for test_day in range(100,600): # the last 600-100 days from today
 all_features_clean, Y_clean = util.remove_nones(all_features, Y)
 
 
-# run SGD
-Y_clean = np.array(Y_clean, dtype=np.dtype('f'))
-all_features_clean = np.array(all_features_clean, dtype=np.dtype('f'))
+### LOOCV has mse=34, so use training error
+kf = KFold(len(all_features_clean), n_folds = len(all_features_clean))
+total_error = 0
+for train,test in kf: 
+    print test
+    this_x = []
+    this_y = []
+    for i in train: 
+        this_x.append(all_features_clean[i])
+        this_y.append(Y_clean[i])
+    reg = linear_model.LinearRegression()
+    reg.fit(this_x, this_y)
+    predicted = reg.predict(all_features_clean[test[0]])
+    squared_error = (predicted - Y_clean[test[0]])**2
+    total_error += squared_error
+
+
+print total_error
+print total_error / len(all_features_clean)
+
+
+
+# training error is 0 
+
 reg = linear_model.LinearRegression()
 reg.fit(all_features_clean, Y_clean)
-print reg.predict(all_features_clean[0:1])
-print Y_clean[0]
 
+total_error = 0
+for i in xrange(len(all_features_clean)):
+    predicted = reg.predict(all_features_clean[i])
+    total_error += (predicted - Y_clean[i])**2
 
-testing_size = 100
-with open('./data/market-price.txt', 'r') as pricefile:
-    data = []
-    for line in pricefile:
-        date, price = line.strip().split(',')
-        price = float(price)
-        data.append((date, price))
-    squared_error = 0
-    # indices 200-100 from the end
-    for i in xrange(len(data) - 2*testing_size, len(data) - testing_size):
-        predict_price = sum([price for date, price in data[i-5:i]]) / 5.0
-        squared_error += (predict_price - data[i][1])** 2
-    mse = squared_error / testing_size
+mse = total_error / len(all_features_clean)
 
 print mse
+
