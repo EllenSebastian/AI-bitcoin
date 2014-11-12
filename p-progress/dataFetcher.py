@@ -1,4 +1,6 @@
 import urllib, json, datetime
+import time
+import pickle
 time_format = '%d/%m/%Y %H:%M:%S'
 
 n_transactions_wanted = 60 # number of transactions to keep per minute
@@ -145,3 +147,13 @@ def record_transactions_per_minute():
 		since = trades[len(trades) - 1]['tid']
 	return out 
 
+
+def get_order_book():
+    with open('order_book.pickle', 'a+b') as f:
+        while True:
+            order_book = {}
+            timestamp = int(time.time())
+            order_book[timestamp] = get_json('https://www.okcoin.com/api/depth.do?ok=1')
+            print 'write', timestamp
+            pickle.dump(order_book, f)
+            time.sleep(60)
