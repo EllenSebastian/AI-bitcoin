@@ -2,6 +2,8 @@
 # implement algorithms including bayesian regression]
 from sklearn import linear_model
 from sklearn.cross_validation import KFold
+from sklearn.gaussian_process import GaussianProcess
+import numpy as np
 
 non_price_inputs =  ['avg-confirmation-time.txt', 'estimated-transaction-volume.txt', 'my-wallet-transaction-volume.txt', 'total-bitcoins.txt', 
              'bitcoin-days-destroyed-cumulative.txt','hash-rate.txt', 'n-orphaned-blocks.txt','trade-volume.txt', 'bitcoin-days-destroyed.txt','market-cap.txt', 
@@ -23,11 +25,18 @@ class PricePredictor:
 		self.trainY = trainY
 		if self.algorithm == 'linear': 
 			self.model = linear_model.LinearRegression()
-			self.model.fit (trainX, trainY)
+		else if self.algorithm = 'gp':
+		    self.model = gaussian_process.GaussianProcess(theta0=1e-2, thetaL=1e-4, thetaU=1e-1)
+
+	def train(self):
+	    self.model.fit(self.trainX, self.trainY)
+
 	def predict(self, features): 
-		if self.aglorithm == 'linear': 
-		    reg = linear_model.LinearRegression()
-    		return reg.predict(features) # value predicted in dt seconds. 
+		if self.aglorithm == 'linear':
+		    return self.model.predict(features) # value predicted in dt seconds.
+		else if self.algorithm == 'gp':
+		    return self.model.predict(features, eval_MSE=True)
+
 	def crossValidation(self, n): 
 		kf = KFold(len(self.trainX), n_folds = n)
 		total_error = 0
@@ -39,12 +48,22 @@ class PricePredictor:
 		    for i in train: 
 		        this_x.append(self.trainX[i])
 		        this_y.append(self.trainY[i])
-		    reg = linear_model.LinearRegression()
-		    reg.fit(this_x, this_y)
-		    for test_i in test: 
-			    predicted = reg.predict(self.trainX[test_i])
-			    predictions[test_i] = predicted
-			    squared_error = (predicted - self.trainY[test_i])**2
-		    total_error += squared_error
+            if self.algorithm == 'linear':
+                reg = linear_model.LinearRegression()
+                reg.fit(this_x, this_y)
+                for test_i in test:
+                    predicted = reg.predict(self.trainX[test_i])
+                    predictions[test_i] = predicted
+                    squared_error = (predicted - self.trainY[test_i])**2
+                total_error += squared_error
+            else if self.algorithm == 'gp':
+                gp = gaussian_process.GaussianProcess(theta0=1e-2, thetaL=1e-4, thetaU=1e-1)
+                gp.fit(this_x, this_y)
+                for test_i in test:
+                    predicted, sigma2 = gp.predict(self.trainX[test-i])
+                    predictions[test_i] = predicted
+                    sigma = np.sqrt(sigma2)
+                    if self.trainY[test_i] > predicted + 1.96 * sigma or self.trainY[test_i] < predicted - 1.96 * sigma:
+                        total_error += 1
 		return total_error / len(self.trainX), predictions
 
