@@ -22,6 +22,8 @@ class PricePredictor:
 		self.model = self.model_for_algorithm()
 		pdb.set_trace()
 		self.model.fit (trainX, trainY)
+
+
 	def model_for_algorithm(self): 
 		if self.algorithm == 'linear': 
 			return linear_model.LinearRegression()
@@ -35,12 +37,18 @@ class PricePredictor:
 			return linear_model.LogisticRegression()
 		elif self.algorithm == 'perceptron':
 			return linear_model.Perceptron()
+
+
 	def train(self):
 	    self.model.fit(self.trainX, self.trainY)
+
+
 	def predict(self, features): 
 		if self.algorithm == 'gp':
 		    return self.model.predict(features, eval_MSE=True)
 		return self.model.predict(features) # value predicted in dt seconds. 
+
+
 	def crossValidation(self, n): 
 		kf = KFold(len(self.trainX), n_folds = n)
 		total_error = 0
@@ -71,6 +79,8 @@ class PricePredictor:
 				return total_error / len(self.trainX), predictions 
 		self.count_accuracy(predictions)
 		return total_error / len(self.trainX), predictions
+
+
 	def count_accuracy(self, predictions):
 		false_neg, true_neg, false_pos, true_pos = 0,0,0,0
 		for i in range(0,len(self.trainY)): 
