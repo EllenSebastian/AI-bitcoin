@@ -84,3 +84,5 @@ class PricePredictor:
 				false_neg += 1 
 		print 'True pos', true_pos, 'True neg', true_neg, 'False pos', false_pos, 'false_neg', false_neg
 	
+
+	
