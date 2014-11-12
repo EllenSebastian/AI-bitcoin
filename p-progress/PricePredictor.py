@@ -3,6 +3,12 @@
 from sklearn import linear_model
 from sklearn.cross_validation import KFold
 
+non_price_inputs =  ['avg-confirmation-time.txt', 'estimated-transaction-volume.txt', 'my-wallet-transaction-volume.txt', 'total-bitcoins.txt', 
+             'bitcoin-days-destroyed-cumulative.txt','hash-rate.txt', 'n-orphaned-blocks.txt','trade-volume.txt', 'bitcoin-days-destroyed.txt','market-cap.txt', 
+             'n-transactions-excluding-popular.txt','transaction-fees.txt', 'blocks-size.txt','n-transactions-per-block.txt', 'tx-trade-ratio.txt', 
+             'cost-per-transaction.txt','miners-revenue.txt', 'n-transactions.txt', 'difficulty.txt','my-wallet-n-tx.txt', 'n-unique-addresses.txt', 
+             'estimated-transaction-volume-usd.txt', 'my-wallet-n-users.txt', 'output-volume.txt']
+
 class PricePredictor: 
 	# train the algorithm to predict the next deltaP over the next numSeconds seconds. 
 	# trainSet will include: 
@@ -42,19 +48,3 @@ class PricePredictor:
 		    total_error += squared_error
 		return total_error / len(self.trainX), predictions
 
-err, predictions= pp_linear.crossValidation(10)
-pp_linear = PricePredictor(all_features, all_Y, 'linear')
-false_neg, true_neg, false_pos, true_pos = 0,0,0,0
-for i in range(0,9999): 
-	if all_Y[i] < 0 and predictions[i] < 0: 
-		true_neg += 1
-	elif all_Y[i] > 0 and predictions[i] > 0: 
-		true_pos += 1
-	elif predictions[i] > 0: 
-		false_pos += 1 
-		print predictions[i], all_Y[i]
-	elif predictions[i] < 0: 
-		false_neg += 1 
-		print predictions[i], all_Y[i]
-	else: 
-		print '???????', predictions[i], all_Y[i]

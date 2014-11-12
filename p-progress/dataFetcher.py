@@ -1,4 +1,6 @@
 import urllib, json, datetime
+time_format = '%d/%m/%Y %H:%M:%S'
+
 n_transactions_wanted = 60 # number of transactions to keep per minute
 def read_data(file): 
 	out = {}
@@ -6,6 +8,10 @@ def read_data(file):
 		line_split = line.strip().split(',')
 		out[time_to_date(time.strptime(line.strip().split(',')[0], time_format) )] = float(line.strip().split(',')[1])
 	return out 
+
+def time_to_date(t): 
+	dt = datetime.datetime.fromtimestamp(time.mktime(t))
+	return datetime.date(dt.year, dt.month, dt.day)
 
 
 def day_to_price():
@@ -21,6 +27,14 @@ def get_json(url):
 	response = urllib.urlopen(url)
 	return json.loads(response.read())
 
+def read_data(file): 
+	out = {}
+	for line in open(file): 
+		line_split = line.strip().split(',')
+		out[time_to_date(time.strptime(line.strip().split(',')[0], time_format) )] = float(line.strip().split(',')[1])
+	return out 
+
+
 def make_feature_vector_from_file(data, start_date, end_date):
     out = []
     cur_date = copy.deepcopy(start_date)
@@ -29,8 +43,31 @@ def make_feature_vector_from_file(data, start_date, end_date):
             out.append(data[cur_date])
         else: 
             out.append(None)
-        cur_date += timedelta(days=1)
-    return out 
+        cur_date += datetime.timedelta(days=1)
+    return impute_vector(out)
+
+def impute_vector(vec): 
+    imputed_assignments = {}
+    for i in range(len(vec)): 
+    	if vec[i] is None: 
+    		# find the previous data point
+    		prev, next = None, None
+    		for j in range(i-1,0, -1): 
+    			if vec[j] is not None: 
+    				prev = vec[j]
+    				break
+    		for j in range(i+1,len(vec)): 
+    			if vec[j] is not None: 
+    				next = vec[j]
+    		if next is not None and prev is not None: 
+    			imputed_assignments[i] = np.mean([next, prev])
+    		elif next is not None: 
+    			imputed_assignments[i] = next
+    		elif prev is not None: 
+    			imputed_assignments[i] = prev
+    for i in imputed_assignments.keys(): 
+    	vec[i] = imputed_assignments[i]
+    return vec
 
 # e.g. {u'date': 1415750105, u'tid': 762497, u'amount': u'0.09', u'type': u'sell', u'price': u'366.43'}
 def get_last_60_transactions(): 

@@ -37,9 +37,10 @@ for test_day in range(100,600): # the last 600-100 days from today
     for file in non_price_inputs:
         cur_features = util.make_feature_vector_from_file(data[file], start_day, future_day) 
         features += cur_features 
-    pdb.set_trace()
-    all_features.append(features)
-    Y.append(day_price[this_day])
+    features += util.make_feature_vector_from_file(data['market-price.txt'], start_day, end_day)
+    if this_day in day_price: 
+        all_features.append(features)
+        Y.append(day_price[this_day])
 
 
 # limit the output to examples where there are no Nones (no missing days)
