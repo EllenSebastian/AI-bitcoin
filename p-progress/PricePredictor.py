@@ -23,6 +23,10 @@ class PricePredictor:
 		self.featureLabels = featureLabels
 		self.trainX = trainX
 		self.trainY = trainY
+		self.model = self.model_for_algorithm()
+		self.model.fit (trainX, trainY)
+
+	def model_for_algorithm(self): 
 		if self.algorithm == 'linear': 
 			self.model = linear_model.LinearRegression()
 		else if self.algorithm = 'gp':
@@ -33,10 +37,19 @@ class PricePredictor:
 
 	def predict(self, features): 
 		if self.aglorithm == 'linear':
-		    return self.model.predict(features) # value predicted in dt seconds.
+			return linear_model.LinearRegression()
 		else if self.algorithm == 'gp':
 		    return self.model.predict(features, eval_MSE=True)
-
+		elif self.algorithm == 'bayesianridge': 
+			return linear_model.BayesianRidge()
+		elif self.algorithm == 'ridge': 
+			return linear_model.Ridge (alpha = 1)
+		elif self.algorithm == 'logistic':
+			return linear_model.LogisticRegression()
+		elif self.algorithm == 'perceptron':
+			return linear_model.Perceptron()
+	def predict(self, features): 
+		return self.model.predict(features) # value predicted in dt seconds. 
 	def crossValidation(self, n): 
 		kf = KFold(len(self.trainX), n_folds = n)
 		total_error = 0
@@ -48,7 +61,7 @@ class PricePredictor:
 		    for i in train: 
 		        this_x.append(self.trainX[i])
 		        this_y.append(self.trainY[i])
-            if self.algorithm == 'linear':
+            if self.algorithm != 'gp':
                 reg = linear_model.LinearRegression()
                 reg.fit(this_x, this_y)
                 for test_i in test:
@@ -65,5 +78,29 @@ class PricePredictor:
                     sigma = np.sqrt(sigma2)
                     if self.trainY[test_i] > predicted + 1.96 * sigma or self.trainY[test_i] < predicted - 1.96 * sigma:
                         total_error += 1
+			print test
+			this_x = []
+			this_y = []
+			for i in train: 
+				this_x.append(self.trainX[i])
+				this_y.append(self.trainY[i])
+			reg = self.model_for_algorithm()
+			reg.fit(this_x, this_y)
+			for test_i in test: 
+				predicted = reg.predict(self.trainX[test_i])
+				predictions[test_i] = predicted
+				squared_error = (predicted - self.trainY[test_i])**2
+			total_error += squared_error
+		false_neg, true_neg, false_pos, true_pos = 0,0,0,0
+		for i in range(0,len(self.trainY)): 
+			if self.trainY[i] < 0 and predictions[i] < 0: 
+				true_neg += 1
+			elif self.trainY[i] > 0 and predictions[i] > 0: 
+				true_pos += 1
+			elif predictions[i] > 0: 
+				false_pos += 1 
+			elif predictions[i] < 0: 
+				false_neg += 1 
+		print 'True pos', true_pos, 'True neg', true_neg, 'False pos', false_pos, 'false_neg', false_neg
 		return total_error / len(self.trainX), predictions
 

@@ -69,7 +69,9 @@ def features_for_ts(train_ts):
 
 f = features_for_ts(train_ts)
 
-for train_ts in train_examples[0:10]:
+all_Y = []
+all_features = []
+for train_ts in train_examples:
 	print train_ts
 	features = features_for_ts(train_ts)
 	while None in features: 
@@ -82,20 +84,34 @@ for train_ts in train_examples[0:10]:
 	# average price over the last 60 minutes, last 24 hours, last 60 days
 
 
-pp_linear = PricePredictor.PricePredictor(all_features, all_Y, 'linear')
+linear_model_ = PricePredictor(all_features, all_Y, 'linear')
+linear_err, linear_predictions= linear_model_.crossValidation(10)
+# True pos 247 True neg 234 False pos 275 false_neg 244
+
+
+bayesian_model = PricePredictor(all_features, all_Y, 'BayesianRidge')
+bayes_err, bayes_predictions= bayesian_model.crossValidation(10)
+# True pos 241 True neg 261 False pos 244 false_neg 254
+
+
+ridge_model = PricePredictor(all_features, all_Y, 'ridge')
+ridge_err, ridge_predictions= ridge_model.crossValidation(10)
+# True pos 247 True neg 234 False pos 275 false_neg 244
+
+logistic_model = PricePredictor(all_features, all_Y, 'logistic') # does not finish
 err, predictions= pp_linear.crossValidation(10)
-pp_linear = PricePredictor(all_features, all_Y, 'linear')
-false_neg, true_neg, false_pos, true_pos = 0,0,0,0
-for i in range(0,999): 
-	if all_Y[i] < 0 and predictions[i] < 0: 
-		true_neg += 1
-	elif all_Y[i] > 0 and predictions[i] > 0: 
-		true_pos += 1
-	elif predictions[i] > 0: 
-		false_pos += 1 
-		print predictions[i], all_Y[i]
-	elif predictions[i] < 0: 
-		false_neg += 1 
-		print predictions[i], all_Y[i]
-	else: 
-		print '???????', predictions[i], all_Y[i]
+
+perceptron_model = PricePredictor(all_features, all_Y, 'perceptron')
+perceprton_err, perceptron_predictions= pp_linear.crossValidation(10)
+
+
+pred = []
+for i in range(0,1000):
+	pred.append(linear_predictions[i])
+
+import matplotlib.pyplot as plt
+plt.scatter(all_Y, pred)
+plt.xlabel('Actual Delta P values')
+plt.ylabel('Predicted Delta P values')
+plt.title('Predicted vs actual Delta P values for Linear Regression')
+plt.show()
