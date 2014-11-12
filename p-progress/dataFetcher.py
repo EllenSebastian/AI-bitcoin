@@ -1,4 +1,5 @@
 import urllib, json, datetime
+n_transactions_wanted = 60 # number of transactions to keep per minute
 def read_data(file): 
 	out = {}
 	for line in open(file): 
@@ -41,6 +42,8 @@ def get_ticker():
 
 
 # URL:http://api.coindesk.com/charts/data?data=close&startdate=2012-11-10&enddate=2012-11-10&exchanges=bpi&dev=1&index=USD&callback=cb
+# endTime is the Unix time stamp to count backwards from for aggregation. 
+# start_date and end_date are in GMT!! (probably)
 def read_granular_transactions(start_date=datetime.datetime(2010, 12, 01), end_date=datetime.datetime(2014, 11, 11)): 
 	step = datetime.timedelta(days=1)
 	dates = []
@@ -57,11 +60,45 @@ def read_granular_transactions(start_date=datetime.datetime(2010, 12, 01), end_d
 		response = urllib.urlopen(url)
 		dat = response.read()
 		for line in json.loads(dat[3:len(dat) - 2])['bpi']:
-			prices[line[0]] = line[1]
+			prices[line[0] / 1000] = line[1] # convert to seconds 
 	return prices 
+
+# TODO update the data
+
+# must call pickle.load('bitcoin_prices.pickle') to get the prices and pass them in. 
+def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60): 
+	aggregation *= 1000
+	start_timestamp = end_timestamp - n_aggregates * aggregation
+	sorted_timestamps = sorted([x for x in prices.keys() if x >= start_timestamp and x <= end_timestamp])
+	out = []
+	for i in range(n_aggregates): 
+		matches = [prices[x] for x in sorted_timestamps if x >= start_timestamp and x < (start_timestamp + aggregation)]
+		out.append(numpy.mean(matches))
+		start_timestamp += aggregation
+	return out 
 
 def print_prices(prices): 
 	f = open('prices.csv','w')
 	for key in sorted(prices.keys()): 
 		f.write('{0},{1}'.format(key, prices[key]))
 	f.close()
+
+# 60 transactions 
+def record_transactions_per_minute(): 
+	# {minute_modded_timestamp-> buy/sell ratio, avg amount, avg sell amount, avg buy amount}
+	out = {}	
+	since = 26000
+	while True: 
+		print since, len(out.keys())
+		trades = get_json('https://www.okcoin.com/api/v1/trades.do?since={0}'.format(since))
+		for trade in trades: 
+			key = trade['date'] - (trade['date'] % 60)
+			if key not in out:
+				out[key] = []
+			if len(out[key]) < 60: 
+				out[key].append((trade['amount'], trade['type']))
+		if trades == []: 
+			break
+		since = trades[len(trades) - 1]['tid']
+	return out 
+
