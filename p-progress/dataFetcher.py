@@ -59,3 +59,9 @@ def read_granular_transactions(start_date=datetime.datetime(2010, 12, 01), end_d
 		for line in json.loads(dat[3:len(dat) - 2])['bpi']:
 			prices[line[0]] = line[1]
 	return prices 
+
+def print_prices(prices): 
+	f = open('prices.csv','w')
+	for key in sorted(prices.keys()): 
+		f.write('{0},{1}'.format(key, prices[key]))
+	f.close()
