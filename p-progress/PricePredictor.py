@@ -32,7 +32,7 @@ class PricePredictor:
 		elif self.algorithm == 'bayesianridge': 
 			return linear_model.BayesianRidge()
 		elif self.algorithm == 'ridge': 
-			return linear_model.Ridge (alpha = 1)
+			return linear_model.Ridge (alpha = 0.5)
 		elif self.algorithm == 'logistic':
 			return linear_model.LogisticRegression()
 		elif self.algorithm == 'perceptron':
@@ -95,4 +95,15 @@ class PricePredictor:
 		print 'True pos', true_pos, 'True neg', true_neg, 'False pos', false_pos, 'false_neg', false_neg
 	
 
+
+def subset_sum(arr): 
+	for i in xrange(len(arr)): 
+		for j in xrange(i+1,len(arr)): 
+			if (0 - arr[i] - arr[j]) in arr: 
+				print arr[i], arr[j], 0-arr[i]-arr[j]
+
+cur_multiplier = 1 
+str = 'XXIV'
+while str != '': 
+	if cur_multiplier = 1: 
 	

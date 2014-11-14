@@ -3,7 +3,7 @@ import numpy, pickle, random, pdb
 # features for this test : 
 N_EXAMPLES = 1000
 DAYS_FOR_FEATURES = 30 # number of days to look in the past for non-price features. 
-
+dt = 60 
 import pickle, math, random
 
 execfile('dataFetcher.py')
@@ -67,8 +67,6 @@ def features_for_ts(train_ts):
 		features += cur_features 
 	return features	
 
-f = features_for_ts(train_ts)
-
 all_Y = []
 all_features = []
 for train_ts in train_examples:
@@ -80,9 +78,12 @@ for train_ts in train_examples:
 			train_ts = random.choice(possible_train)
 		features = features_for_ts(train_ts)
 	all_features.append(features)
-	all_Y.append(prices[train_ts + 60] - prices[train_ts])
+	all_Y.append((prices[train_ts + dt] - prices[train_ts]) / float(prices[train_ts]))
 	# average price over the last 60 minutes, last 24 hours, last 60 days
-
+	if train_ts == train_examples[0]: 
+		pdb.set_trace()
+	if len(all_Y) >= 1000: 
+		break 
 
 linear_model_ = PricePredictor(all_features, all_Y, 'linear')
 linear_err, linear_predictions= linear_model_.crossValidation(10)
