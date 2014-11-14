@@ -1,4 +1,3 @@
-
 # oracle algorithm: SGD on past data including price, future data 
 # for all except price.
 import numpy as np
