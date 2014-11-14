@@ -2,6 +2,9 @@ import urllib, json, datetime
 import time
 import pickle
 import schedule
+import pdb
+import numpy as np
+
 time_format = '%d/%m/%Y %H:%M:%S'
 
 n_transactions_wanted = 60 # number of transactions to keep per minute
@@ -107,6 +110,15 @@ def read_granular_transactions(start_date=datetime.datetime(2010, 12, 01), end_d
 
 # must call pickle.load('bitcoin_prices.pickle') to get the prices and pass them in. 
 def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60): 
+	"""
+	------------------------------------------------------------------------------
+	prices - dict of unix timestamps to price
+	end_timestamp - unix timestamp at which the procurement ends 
+	n-aggregates - number of (timestamp : price) elements returned
+	aggregation - number of seconds to aggregate over 
+	return list of prices in chronological order ending at end_timestamp
+	------------------------------------------------------------------------------
+	"""
 	try: 
 		start_timestamp = end_timestamp - n_aggregates * aggregation
 		sorted_timestamps = sorted([x for x in prices.keys() if x >= start_timestamp and x <= end_timestamp])
@@ -117,7 +129,7 @@ def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60
 			while sorted_timestamps[cur_ts] < (start_timestamp + aggregation): 
 				cur_ts += 1
 				matches.append(prices[sorted_timestamps[cur_ts]])
-			out.append(numpy.mean(matches))
+			out.append(np.mean(matches))
 			start_timestamp += aggregation
 		return out 
 	except Exception, e:
