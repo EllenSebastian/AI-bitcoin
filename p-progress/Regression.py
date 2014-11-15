@@ -1,5 +1,6 @@
 # extract features for regression
 import numpy, pickle, random, pdb
+import PricePredictor
 # features for this test : 
 N_EXAMPLES = 1000
 DAYS_FOR_FEATURES = 30 # number of days to look in the past for non-price features. 
@@ -12,13 +13,13 @@ transactions_per_minute = pickle.load(open('../data/transactions_per_minute.pick
 sorted_timestamps = sorted(prices.keys(), reverse=True)
 
 non_price_inputs =  ['avg-confirmation-time.txt', 'estimated-transaction-volume.txt', 'my-wallet-transaction-volume.txt', 'total-bitcoins.txt', 
-             'bitcoin-days-destroyed-cumulative.txt','hash-rate.txt', 'n-orphaned-blocks.txt','trade-volume.txt', 'bitcoin-days-destroyed.txt','market-cap.txt', 
-             'n-transactions-excluding-popular.txt','transaction-fees.txt', 'blocks-size.txt','n-transactions-per-block.txt', 'tx-trade-ratio.txt', 
-             'cost-per-transaction.txt','miners-revenue.txt', 'n-transactions.txt', 'difficulty.txt','my-wallet-n-tx.txt', 'n-unique-addresses.txt', 
-             'estimated-transaction-volume-usd.txt', 'my-wallet-n-users.txt', 'output-volume.txt']
+                     'bitcoin-days-destroyed-cumulative.txt','hash-rate.txt', 'n-orphaned-blocks.txt','trade-volume.txt', 'bitcoin-days-destroyed.txt','market-cap.txt', 
+                     'n-transactions-excluding-popular.txt','transaction-fees.txt', 'blocks-size.txt','n-transactions-per-block.txt', 'tx-trade-ratio.txt', 
+                     'cost-per-transaction.txt','miners-revenue.txt', 'n-transactions.txt', 'difficulty.txt','my-wallet-n-tx.txt', 'n-unique-addresses.txt', 
+                     'estimated-transaction-volume-usd.txt', 'my-wallet-n-users.txt', 'output-volume.txt']
 
 data = {}
-for f in non_price_inputs: 
+for f in non_price_inputs:
     data[f] = read_data('../data/' + f)
 
 possible_train = []
@@ -86,12 +87,18 @@ all_Y = []
 all_features = []
 for train_ts in train_examples:
 	print train_ts
-	features = features_for_ts(train_ts)
+    try:
+        features = features_for_ts(train_ts)
+    except Exception:
+        features = [None]
 	while None in features: 
 		pdb.set_trace()
 		while train_ts in train_examples: 
 			train_ts = random.choice(possible_train)
-		features = features_for_ts(train_ts)
+        try:
+            features = features_for_ts(train_ts)
+        except Exception:
+            features = [None]
 	all_features.append(features)
 	all_Y.append((prices[train_ts + dt] - prices[train_ts]) / float(prices[train_ts]))
 	# average price over the last 60 minutes, last 24 hours, last 60 days
@@ -99,6 +106,11 @@ for train_ts in train_examples:
 		pdb.set_trace()
 	if len(all_Y) >= 1000: 
 		break 
+
+#gp = PricePredictor.PricePredictor(np.array(all_features), np.array(all_Y), 'gp')
+#err, predictions = gp.crossValidation(10)
+#print err, predictions
+
 
 linear_model_ = PricePredictor(all_features, all_Y, 'linear')
 linear_err, linear_predictions= linear_model_.crossValidation(10)
@@ -124,7 +136,7 @@ perceprton_err, perceptron_predictions= pp_linear.crossValidation(10)
 
 pred = []
 for i in range(0,1000):
-	pred.append(linear_predictions[i])
+    pred.append(linear_predictions[i])
 
 
 import matplotlib.pyplot as plt
