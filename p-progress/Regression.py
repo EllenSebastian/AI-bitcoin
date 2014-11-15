@@ -125,8 +125,7 @@ bayes_err, bayes_predictions= bayesian_model.crossValidation(10)
 
 ridge_model = PricePredictor(all_features, all_Y, 'ridge')
 ridge_err, ridge_predictions= ridge_model.crossValidation(10)
-# True pos 247 True neg 234 False pos 275 false_neg 244
-
+# True pos 239 True neg 206 False pos 231 false_neg 208
 logistic_model = PricePredictor(all_features, all_Y, 'logistic') # does not finish
 err, predictions= pp_linear.crossValidation(10)
 
@@ -134,14 +133,13 @@ perceptron_model = PricePredictor(all_features, all_Y, 'perceptron')
 perceprton_err, perceptron_predictions= pp_linear.crossValidation(10)
 
 
-pred = []
-for i in range(0,1000):
-    pred.append(linear_predictions[i])
-
-
-import matplotlib.pyplot as plt
-plt.scatter(all_Y, pred)
-plt.xlabel('Actual Delta P values')
-plt.ylabel('Predicted Delta P values')
-plt.title('Predicted vs actual Delta P values for Linear Regression')
-plt.show()
+def plot_predictions(predictions, all_Y ,n):
+	pred = []
+	for i in range(0,n):
+		pred.append(predictions[i])
+	import matplotlib.pyplot as plt
+	plt.scatter(all_Y, pred)
+	plt.xlabel('Actual Delta P values')
+	plt.ylabel('Predicted Delta P values')
+	plt.title('Predicted vs actual Delta P values for Linear Regression')
+	plt.show()
