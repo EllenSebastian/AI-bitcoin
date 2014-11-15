@@ -1,5 +1,5 @@
 # extract features for regression
-import numpy, pickle, random, pdb
+import numpy, pickle, random, pdb, copy
 import PricePredictor
 # features for this test : 
 N_EXAMPLES = 1000
@@ -64,7 +64,6 @@ def features_for_ts(train_ts):
     minPrices = []
     for i in range(0, 60): 
         minPrices += [prices[train_ts - i*60]]
-
     if pct_change: 
         features += convert_to_pct_change(minPrices)
         features += convert_to_pct_change(aggregated_prices(prices, train_ts - (60 * 60), 24, 60 * 60))
@@ -85,14 +84,15 @@ def features_for_ts(train_ts):
 
 all_Y = []
 all_features = []
+i = 0
 for train_ts in train_examples:
-    print train_ts
+    print i 
+    i += 1
     try:
         features = features_for_ts(train_ts)
     except Exception:
         features = [None]
     while None in features: 
-        pdb.set_trace()
         while train_ts in train_examples: 
             train_ts = random.choice(possible_train)
         try:
@@ -115,7 +115,6 @@ for train_ts in train_examples:
 linear_model_ = PricePredictor(all_features, all_Y, 'linear')
 linear_err, linear_predictions= linear_model_.crossValidation(10)
 # True pos 247 True neg 234 False pos 275 false_neg 244
-# True pos 234 True neg 207 False pos 230 false_neg 213
 # has very bad high predictions: 113740%
 
 bayesian_model = PricePredictor(all_features, all_Y, 'BayesianRidge')
@@ -133,12 +132,14 @@ perceptron_model = PricePredictor(all_features, all_Y, 'perceptron')
 perceprton_err, perceptron_predictions= pp_linear.crossValidation(10)
 
 
-def plot_predictions(predictions, all_Y ,n):
+# predictions and all_Y are both percent price change arrays, 
+# where the index in predictions corresponds to the index in all_Y.
+def plot_predictions(predictions, true_Y):
 	pred = []
-	for i in range(0,n):
+	for i in range(0,len(predictions)):
 		pred.append(predictions[i])
 	import matplotlib.pyplot as plt
-	plt.scatter(all_Y, pred)
+	plt.scatter(true_Y, pred)
 	plt.xlabel('Actual Delta P values')
 	plt.ylabel('Predicted Delta P values')
 	plt.title('Predicted vs actual Delta P values for Linear Regression')
