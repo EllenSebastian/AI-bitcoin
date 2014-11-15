@@ -100,6 +100,10 @@ num_features = 10
 min_10f_100w = simulate(prices, 10, 100, 1413763200, 10000, 60)
 # 0.5230596175478065
 
+hour_100f_25w = simulate(prices, 100, 24, 1413763200, 10000, 3600)
+#tp 250 tn 232 fp 187 fn 209
+#0.5489749430523918
+
 # ASSERTION ERROR input.shape[1] == net.ci
 hour_100f_25w = simulate(prices, 100, 11, 1413763200, 10000, 3600)
 # tp 25804 tn 21390 fp 21195 fn 20811

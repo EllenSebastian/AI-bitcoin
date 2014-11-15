@@ -1,11 +1,11 @@
 # extract features for regression
-import numpy, pickle, random, pdb, copy
+import numpy, pickle, random, pdb, copy, pickle, math, random
 import PricePredictor
-# features for this test : 
 N_EXAMPLES = 1000
 DAYS_FOR_FEATURES = 30 # number of days to look in the past for non-price features. 
 dt = 60 
-import pickle, math, random
+pct_change = False # use percent change instead of raw?
+use_other_features = False # use non-price inputs?
 
 execfile('dataFetcher.py')
 prices = pickle.load(open('../data/bitcoin_prices.pickle') )
@@ -77,9 +77,10 @@ def features_for_ts(train_ts):
     start_datetime = datetime.datetime.fromtimestamp(train_ts)
     end_day = datetime.date(start_datetime.year, start_datetime.month, start_datetime.day)
     start_day = end_day - datetime.timedelta(days=DAYS_FOR_FEATURES)
-    for file in non_price_inputs:
-        cur_features = make_feature_vector_from_file(data[file], start_day, end_day) 
-        features += cur_features 
+    if use_other_features: 
+    	for file in non_price_inputs:
+    	    cur_features = make_feature_vector_from_file(data[file], start_day, end_day) 
+    	    features += cur_features 
     return features	
 
 all_Y = []
@@ -112,23 +113,30 @@ for train_ts in train_examples:
 #print err, predictions
 
 
-linear_model_ = PricePredictor(all_features, all_Y, 'linear')
+linear_model_ = PricePredictor.PricePredictor(all_features, all_Y, 'linear')
 linear_err, linear_predictions= linear_model_.crossValidation(10)
-# True pos 247 True neg 234 False pos 275 false_neg 244
+# no outside variables: True pos 247 True neg 234 False pos 275 false_neg 244
+# outside variables:    True pos 256 True neg 250 False pos 249 false_neg 245
+
 # has very bad high predictions: 113740%
 
-bayesian_model = PricePredictor(all_features, all_Y, 'BayesianRidge')
+bayesian_model = PricePredictor.PricePredictor(all_features, all_Y, 'BayesianRidge')
 bayes_err, bayes_predictions= bayesian_model.crossValidation(10)
-# True pos 241 True neg 261 False pos 244 false_neg 254
+# no outside variables: True pos 241 True neg 261 False pos 244 false_neg 254
+# outside variables: True pos 240 True neg 259 False pos 243 false_neg 258
 
 
-ridge_model = PricePredictor(all_features, all_Y, 'ridge')
+ridge_model = PricePredictor.PricePredictor(all_features, all_Y, 'ridge')
 ridge_err, ridge_predictions= ridge_model.crossValidation(10)
-# True pos 239 True neg 206 False pos 231 false_neg 208
-logistic_model = PricePredictor(all_features, all_Y, 'logistic') # does not finish
-err, predictions= pp_linear.crossValidation(10)
+# outside variables: True pos 239 True neg 206 False pos 231 false_neg 208
+# no outside variables: True pos 239 True neg 257 False pos 245 false_neg 259
 
-perceptron_model = PricePredictor(all_features, all_Y, 'perceptron')
+
+logistic_model = PricePredictor.PricePredictor(all_features, all_Y, 'logistic') # does not finish
+err, predictions= pp_linear.crossValidation(10)
+# True pos 228 True neg 271 False pos 233 false_neg 268
+
+perceptron_model = PricePredictor.PricePredictor(all_features, all_Y, 'perceptron')
 perceprton_err, perceptron_predictions= pp_linear.crossValidation(10)
 
 
@@ -142,5 +150,5 @@ def plot_predictions(predictions, true_Y):
 	plt.scatter(true_Y, pred)
 	plt.xlabel('Actual Delta P values')
 	plt.ylabel('Predicted Delta P values')
-	plt.title('Predicted vs actual Delta P values for Linear Regression')
+	plt.title('Predicted vs actual Delta P values for Ridge Regression')
 	plt.show()
