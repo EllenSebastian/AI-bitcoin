@@ -14,6 +14,10 @@ prices = pickle.load(open('../data/bitcoin_prices.pickle') )
 class Window(list):
 	def __init__(self, size):
 		self.size = size
+	def __init__(self, arr): 
+		self.size = len(arr)
+		for i in arr: 
+			super(Window, self).append(i)
 	def append(self, item):
 		super(Window, self).append(item) 
 		if len(self) > self.size:
@@ -31,6 +35,8 @@ def normalize(inputs):
 			normed.append((inputs[i][j] - inputs[i][j - 1]) / inputs[i][j])
 		normalized_inputs.append(normed)
 	return normalized_inputs
+
+
 
 def createTrainExamples(normalized_inputs):
 	normalized_inputs = np.array(normalized_inputs)
@@ -58,8 +64,11 @@ def simulate(priceData, num_features, window_size, end_timestamp, num_aggregates
 				net = nl.net.newff([[-1, 1] for i in range(window_size - 1)], [num_features, 1])
 				inputs, targets = createTrainExamples(normalized_inputs_and_targets)
 				err = net.train(inputs, targets, show=15, epochs = 20)
-				errs.append(err)
-				out = net.sim(inputs)
+				next_window = Window(window)
+				next_window.append(prices[index + 1])
+				out = net.sim(np.array([next_window]))
+				pdb.set_trace()
+				errs.append(out)
 				for o in xrange(len(out)): 
 					if out[o] < 0 and targets[o] < 0: 
 						tn += 1
@@ -81,12 +90,13 @@ hour_10f_10w = simulate(prices, 10, 10, 1413763200, 10000, 3600)
 
 hour_100f_10w = simulate(prices, 100, 10, 1413763200, 10000, 3600)
 # tp 25391 tn 21679 fp 20906 fn 21224
+# 0.5276905829596412% 
 
 # ASSERTION ERROR input.shape[1] == net.ci
 min_10f_100w = simulate(prices, 10, 100, 1413763200, 10000, 60)
 
 # ASSERTION ERROR input.shape[1] == net.ci
-hour_100f_100w = simulate(prices, 100, 100, 1413763200, 10000, 3600)
+hour_100f_25w = simulate(prices, 100, 11, 1413763200, 10000, 3600)
 # tp 25804 tn 21390 fp 21195 fn 20811
 
 hour_200f_200w = simulate(prices, 200, 200, 1413763200, 10000, 3600)

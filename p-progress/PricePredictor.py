@@ -94,16 +94,3 @@ class PricePredictor:
 				false_neg += 1 
 		print 'True pos', true_pos, 'True neg', true_neg, 'False pos', false_pos, 'false_neg', false_neg
 	
-
-
-def subset_sum(arr): 
-	for i in xrange(len(arr)): 
-		for j in xrange(i+1,len(arr)): 
-			if (0 - arr[i] - arr[j]) in arr: 
-				print arr[i], arr[j], 0-arr[i]-arr[j]
-
-cur_multiplier = 1 
-str = 'XXIV'
-while str != '': 
-	if cur_multiplier = 1: 
-	
