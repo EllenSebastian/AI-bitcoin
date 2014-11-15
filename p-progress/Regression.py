@@ -150,5 +150,5 @@ def plot_predictions(predictions, true_Y):
 	plt.scatter(true_Y, pred)
 	plt.xlabel('Actual Delta P values')
 	plt.ylabel('Predicted Delta P values')
-	plt.title('Predicted vs actual Delta P values for Ridge Regression')
+	plt.title('Predicted vs actual Delta P values for Bayesian Ridge Regression')
 	plt.show()

@@ -52,7 +52,7 @@ def simulate(priceData, num_features, window_size, end_timestamp, num_aggregates
 	window = Window(window_size)
 	inputs_and_targets = Window(num_features)
 	errs = []
-	for index in range(1000):
+	for index in range(200):
 		#pdb.set_trace()
 		window.append(prices[index])
 		if len(window) == window_size:
@@ -68,16 +68,19 @@ def simulate(priceData, num_features, window_size, end_timestamp, num_aggregates
 				next_window.append(prices[index + 1])
 				test_input = normalize([next_window])
 				out = net.sim(test_input)
-				errs.append(out)
-				for o in xrange(len(out)): 
-					if out[o] < 0 and targets[o] < 0: 
-						tn += 1
-					elif out[o] >= 0 and targets[o] >= 0: 
-						tp += 1
-					elif out[o] >= 0: 
-						fp += 1
-					else:
-						fn += 1 
+				actualDP = (prices[index + 2] - prices[index + 1]) / prices[index + 1]
+				errs.append((out[0][0],actualDP))
+				print errs[len(errs) - 1]
+				if out[0][0] < 0 and actualDP < 0: 
+					tn += 1
+				elif out[0][0] < 0 and actualDP >= 0:
+					fn += 1  
+				elif out[0][0] > 0 and actualDP < 0: 
+					fp += 1
+				elif out[0][0] >= 0 and actualDP >= 0:
+					tp += 1
+				else: 
+					print out[0][0], actualDP
 	print 'tp',tp ,'tn', tn, 'fp',fp, 'fn', fn
 	return errs, tp, tn, tp, fn
 				# predict the next value
@@ -114,3 +117,13 @@ hour_200f_200w = simulate(prices, 200, 200, 1413763200, 10000, 3600)
 hour_300f_100w = simulate(prices, 300, 100, 1413763200, 10000, 3600)
 # tp 24725 tn 22141 fp 20444 fn 21890
 
+
+def plot_predictions(simulate_out):
+	pred = [res[0] for res in simulate_out[0]]
+	actual = [res[0] for res in simulate_out[0]]
+	import matplotlib.pyplot as plt
+	plt.scatter(pred, actual)
+	plt.xlabel('Actual Delta P values')
+	plt.ylabel('Predicted Delta P values')
+	plt.title('Predicted vs actual Delta P values for Bayesian Ridge Regression')
+	plt.show()
