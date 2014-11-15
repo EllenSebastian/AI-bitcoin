@@ -26,13 +26,13 @@ possible_train = []
 
 train_examples = transactions_per_minute.keys()
 for i in xrange(len(sorted_timestamps)-1):
-	if sorted_timestamps[i] - sorted_timestamps[i+1] == 60 and sorted_timestamps[i] in transactions_per_minute: 
-		n_not_found = 0 
-		for j in range(0, 60): 
-			if sorted_timestamps[i] - j * 60 not in prices: 
-				n_not_found += 1 
-		if n_not_found == 0: 
-			possible_train.append(sorted_timestamps[i])
+    if sorted_timestamps[i] - sorted_timestamps[i+1] == 60 and sorted_timestamps[i] in transactions_per_minute: 
+        n_not_found = 0 
+        for j in range(0, 60): 
+            if sorted_timestamps[i] - j * 60 not in prices: 
+                n_not_found += 1 
+        if n_not_found == 0: 
+            possible_train.append(sorted_timestamps[i])
 # end up with 98707 places to choose
 
 train_examples = random.sample(possible_train, N_EXAMPLES)
@@ -42,70 +42,70 @@ all_Y = []
 
 # convert [1,1.5,2] to [0.5, 0.25]
 def convert_to_pct_change(vec): 
-	out = []
-	for i in xrange(1, len(vec)):
-		out.append((vec[i] - vec[i-1]) / float(vec[i]))
-	return out 
+    out = []
+    for i in xrange(1, len(vec)):
+        out.append((vec[i] - vec[i-1]) / float(vec[i]))
+    return out 
 
 def features_for_ts(train_ts): 
-	last_60 = transactions_per_minute[train_ts]
-	n_sell = sum([int(x[1] == 'buy') for x in last_60])
-	n_buy = float(sum([int(x[1] == 'sell') for x in last_60]))
-	amt_sell = numpy.mean([float(x[0]) for x in last_60 if x[1] == 'sell'])
-	if n_sell > 0 and n_buy > 0: 
-		log_buy_sell_ratio = math.log(float(n_buy) / n_sell) 
-	elif n_sell is 0:
-		log_buy_sell_ratio = math.log(60)
-	else:
-		log_buy_sell_ratio = math.log(1.0/60)
-	#ticker = get_ticker()['ticker'] # HISTORICAL?
-	features = [log_buy_sell_ratio]# TODO, float(ticker['sell']), float(ticker['buy']), float(ticker['last']), float(ticker['vol']), float(ticker['high']), float(ticker['low'])]
-	# 1 hour of minutes
-	minPrices = []
-	for i in range(0, 60): 
-		minPrices += [prices[train_ts - i*60]]
-	
-	if pct_change: 
-		features += convert_to_pct_change(minPrices)
-		features += convert_to_pct_change(aggregated_prices(prices, train_ts - (60 * 60), 24, 60 * 60))
-		features += convert_to_pct_change(aggregated_prices(prices, train_ts - (60 * 60 * 25), 60, 60 * 60 * 24))
-	else: 
-		features += minPrices
-		features += aggregated_prices(prices, train_ts - (60 * 60), 24, 60 * 60)
-		features += aggregated_prices(prices, train_ts - (60 * 60 * 25), 60, 60 * 60 * 24)
-	# 60 days of days
-	features += aggregated_prices(prices, train_ts - (60 * 60 * 25), 60, 60 * 60 * 24)
-	start_datetime = datetime.datetime.fromtimestamp(train_ts)
-	end_day = datetime.date(start_datetime.year, start_datetime.month, start_datetime.day)
-	start_day = end_day - datetime.timedelta(days=DAYS_FOR_FEATURES)
-	for file in non_price_inputs:
-		cur_features = make_feature_vector_from_file(data[file], start_day, end_day) 
-		features += cur_features 
-	return features	
+    last_60 = transactions_per_minute[train_ts]
+    n_sell = sum([int(x[1] == 'buy') for x in last_60])
+    n_buy = float(sum([int(x[1] == 'sell') for x in last_60]))
+    amt_sell = numpy.mean([float(x[0]) for x in last_60 if x[1] == 'sell'])
+    if n_sell > 0 and n_buy > 0: 
+        log_buy_sell_ratio = math.log(float(n_buy) / n_sell) 
+    elif n_sell is 0:
+        log_buy_sell_ratio = math.log(60)
+    else:
+        log_buy_sell_ratio = math.log(1.0/60)
+    #ticker = get_ticker()['ticker'] # HISTORICAL?
+    features = [log_buy_sell_ratio]# TODO, float(ticker['sell']), float(ticker['buy']), float(ticker['last']), float(ticker['vol']), float(ticker['high']), float(ticker['low'])]
+    # 1 hour of minutes
+    minPrices = []
+    for i in range(0, 60): 
+        minPrices += [prices[train_ts - i*60]]
+
+    if pct_change: 
+        features += convert_to_pct_change(minPrices)
+        features += convert_to_pct_change(aggregated_prices(prices, train_ts - (60 * 60), 24, 60 * 60))
+        features += convert_to_pct_change(aggregated_prices(prices, train_ts - (60 * 60 * 25), 60, 60 * 60 * 24))
+    else: 
+        features += minPrices
+        features += aggregated_prices(prices, train_ts - (60 * 60), 24, 60 * 60)
+        features += aggregated_prices(prices, train_ts - (60 * 60 * 25), 60, 60 * 60 * 24)
+    # 60 days of days
+    features += aggregated_prices(prices, train_ts - (60 * 60 * 25), 60, 60 * 60 * 24)
+    start_datetime = datetime.datetime.fromtimestamp(train_ts)
+    end_day = datetime.date(start_datetime.year, start_datetime.month, start_datetime.day)
+    start_day = end_day - datetime.timedelta(days=DAYS_FOR_FEATURES)
+    for file in non_price_inputs:
+        cur_features = make_feature_vector_from_file(data[file], start_day, end_day) 
+        features += cur_features 
+    return features	
 
 all_Y = []
 all_features = []
 for train_ts in train_examples:
-	print train_ts
+    print train_ts
     try:
         features = features_for_ts(train_ts)
     except Exception:
         features = [None]
-	while None in features: 
-		pdb.set_trace()
-		while train_ts in train_examples: 
-			train_ts = random.choice(possible_train)
+    while None in features: 
+        pdb.set_trace()
+        while train_ts in train_examples: 
+            train_ts = random.choice(possible_train)
         try:
             features = features_for_ts(train_ts)
         except Exception:
             features = [None]
-	all_features.append(features)
-	all_Y.append((prices[train_ts + dt] - prices[train_ts]) / float(prices[train_ts]))
-	# average price over the last 60 minutes, last 24 hours, last 60 days
-	if train_ts == train_examples[0]: 
-		pdb.set_trace()
-	if len(all_Y) >= 1000: 
-		break 
+    all_features.append(features)
+    all_Y.append((prices[train_ts + dt] - prices[train_ts]) / float(prices[train_ts]))
+    # average price over the last 60 minutes, last 24 hours, last 60 days
+    if train_ts == train_examples[0]: 
+        pdb.set_trace()
+    if len(all_Y) >= 1000: 
+        break 
 
 #gp = PricePredictor.PricePredictor(np.array(all_features), np.array(all_Y), 'gp')
 #err, predictions = gp.crossValidation(10)

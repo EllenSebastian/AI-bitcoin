@@ -98,15 +98,15 @@ class PricePredictor:
         print 'True pos', true_pos, 'True neg', true_neg, 'False pos', false_pos, 'false_neg', false_neg
 
 
-	def count_accuracy(self, predictions):
-		false_neg, true_neg, false_pos, true_pos = 0,0,0,0
-		for i in range(0,len(self.trainY)): 
-			if self.trainY[i] < 0 and predictions[i] < 0: 
-				true_neg += 1
-			elif self.trainY[i] > 0 and predictions[i] > 0: 
-				true_pos += 1
-			elif predictions[i] > 0: 
-				false_pos += 1 
-			elif predictions[i] < 0: 
-				false_neg += 1 
-		print 'True pos', true_pos, 'True neg', true_neg, 'False pos', false_pos, 'false_neg', false_neg
+    def count_accuracy(self, predictions):
+        false_neg, true_neg, false_pos, true_pos = 0,0,0,0
+        for i in range(0,len(self.trainY)): 
+            if self.trainY[i] < 0 and predictions[i] < 0: 
+                true_neg += 1
+            elif self.trainY[i] > 0 and predictions[i] > 0: 
+                true_pos += 1
+            elif predictions[i] > 0: 
+                false_pos += 1 
+            elif predictions[i] < 0: 
+                false_neg += 1 
+        print 'True pos', true_pos, 'True neg', true_neg, 'False pos', false_pos, 'false_neg', false_neg
