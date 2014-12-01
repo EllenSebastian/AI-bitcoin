@@ -34,7 +34,7 @@ class NeuralNetwork:
 		self.endTimeStamp = endTimeStamp
 		self.numDataPoints = numDataPoints
 		self.frequency = frequency
-		self.priceData = prices = aggregated_prices(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
+		self.priceData = aggregated_prices(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
 
 
 	def toPercentChange(self):
@@ -46,17 +46,20 @@ class NeuralNetwork:
 
 	def simulate(self):
 		# list holding all our predictions
-		predictions = list() 
+		predictedPercentChanges = list() 
 
 		# list holding all the actuall percentage changes
-		actuals = list()
+		actualPercentChanges = list()
+
+		# list holding the predicted prices
+		predictedPrices = list()
 
 		percentChangePriceData = self.toPercentChange()
 		inputVector = Window(self.numFeatures)
 		targetVector = Window(self.numFeatures)
 		featureVector = Window(self.windowSize)
 
-		net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [self.numFeatures, 1])
+		net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [self.windowSize, 1])
 
 		# iterate over the price data to len(data) - 2 to avoid overflow because we predict step + 2 at each iteration
 		for step in range(len(percentChangePriceData) - 2):
@@ -66,7 +69,6 @@ class NeuralNetwork:
 				inputVector.append(list(featureVector))
 				targetVector.append(percentChangePriceData[step + 1])
 				if inputVector.isFull() and targetVector.isFull():
-					
 
 					# we have enough input and target vectors to train the neural network 
 					# create a 2 layer forward feed neural network
@@ -78,13 +80,21 @@ class NeuralNetwork:
 					# predict next time step
 					testFeatureVector = featureVector[1:] + [percentChangePriceData[step + 1]]	
 					out = net.sim([np.array(testFeatureVector)])
-					predictions.append(out[0][0])
-					actuals.append(percentChangePriceData[step + 2])
-					print "Done with %f of the process" % (float(step)/len(percentChangePriceData) * 100) 
+					predictedPercentChanges.append(out[0][0])
+					predictedPrices.append((out[0][0] * self.priceData[step + 2]) + self.priceData[step + 2])
+					actualPercentChanges.append(percentChangePriceData[step + 2])
+					print "Done with %f of the process" % (float(step)/len(percentChangePriceData) * 100)
 
-		def graphData(predictions, actuals):
+		pl.figure(1)
+		pl.title("Price Data")
+		pl.subplot(211)
+		pl.plot(range(len(predictedPrices)), self.priceData[len(self.priceData) - len(predictedPrices) :], 'b--')
+		pl.subplot(212)
+		pl.plot(range(len(predictedPrices)), predictedPrices, 'r--')
 
-			def graphError(predictions, actuals):
+		def graphData(predictedPercentChanges, actualPercentChanges):
+
+			def graphError(predictedPercentChanges, actualPercentChanges):
 				# considering error and only considering it as error when the signs are different
 				def computeSignedError(pred, actual):
 					if (pred > 0 and actual > 0) or (pred < 0 and actual < 0):
@@ -92,19 +102,19 @@ class NeuralNetwork:
 					else :
 						return abs(pred - actual / actual) * 100
 
-				signedError = map(lambda pred, actual: computeSignedError(pred, actual), predictions, actuals)
-				pl.figure(1)
+				signedError = map(lambda pred, actual: computeSignedError(pred, actual), predictedPercentChanges, actualPercentChanges)
+				pl.figure(2)
 				pl.title("Error")
 				pl.subplot(211)
 				pl.plot(signedError)
 				pl.xlabel('Time step')
 				pl.ylabel('Error (0 if signs are same and normal error if signs are different)')
 
-				pl.figure(2)
+				pl.figure(3)
 				pl.title("Actual vs Predictions")
 				pl.subplot(211)
-				pl.plot(range(len(predictions)), predictions, 'r--', range(len(actuals)), actuals, 'bs')
-				pl.show()
+				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'r--', \
+					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
 
 			def percentageCorrect(predictions, actuals):
 				numCorrect = 0
@@ -113,61 +123,44 @@ class NeuralNetwork:
 						numCorrect = numCorrect + 1
 				return numCorrect / float(len(predictions)) 
 
-			print "The percentage correct is %f." % (percentageCorrect(predictions, actuals))
-			graphError(predictions, actuals)		
+			print "The percentage correct is %f." % (percentageCorrect(predictedPercentChanges, actualPercentChanges))
+			graphError(predictedPercentChanges, actualPercentChanges)		
 
-		graphData(predictions, actuals)
+		graphData(predictedPercentChanges, actualPercentChanges)
+		pl.show()
 
 		
 def main():
 
 	print "Starting Neural Network Simulations"
-	# basicNeuralNetwork = NeuralNetwork()
-	# basicNeuralNetwork.simulate()
+	basicNeuralNetwork = NeuralNetwork()
+	basicNeuralNetwork.simulate()
 
-	# vary window size
-	neuralNetwork1 = NeuralNetwork(60, 10, 200)
-	neuralNetwork1.simulate()
+	# # vary window size
+	# neuralNetwork1 = NeuralNetwork(60, 10, 200)
+	# neuralNetwork1.simulate()
 
-	# larger window
-	neuralNetwork2 = NeuralNetwork(48, 10, 200)
-	neuralNetwork2.simulate()
+	# # larger window
+	# neuralNetwork2 = NeuralNetwork(48, 10, 200)
+	# neuralNetwork2.simulate()
 
-	# large window
-	neuralNetwork3 = NeuralNetwork(32, 10, 200)
-	neuralNetwork3.simulate()
+	# # large window
+	# neuralNetwork3 = NeuralNetwork(32, 10, 200)
+	# neuralNetwork3.simulate()
 
-	# day sized window
-	neuralNetwork4 = NeuralNetwork(24, 10, 200)
-	neuralNetwork4.simulate()
+	# # day sized window
+	# neuralNetwork4 = NeuralNetwork(24, 10, 200)
+	# neuralNetwork4.simulate()
 
 	# half a day sized window
-	neuralNetwork5 = NeuralNetwork(12, 10, 200)
-	neuralNetwork5.simulate()
+	# neuralNetwork5 = NeuralNetwork(12, 10, 200)
+	# neuralNetwork5.simulate()
 
 	# quarter of a day sized window
-	neuralNetwork6 = NeuralNetwork(6, 10, 200)
-	neuralNetwork6.simulate()
+	#neuralNetwork6 = NeuralNetwork(6, 10, 200)
+	#neuralNetwork6.simulate()
 
-	# #simulating the prediction algorithm starting from Oct 20, 2014, every hour
-	# hour_10f_10w = simulate(prices, 10, 10, 1413763200, 10000, 3600)
-	# # tp 2681 tn 2359 fp 2281 fn 2499
 
-	# hour_100f_10w = simulate(prices, 100, 10, 1413763200, 10000, 3600)
-	# # tp 25391 tn 21679 fp 20906 fn 21224
-
-	# # ASSERTION ERROR input.shape[1] == net.ci
-	# min_10f_100w = simulate(prices, 10, 100, 1413763200, 10000, 60)
-
-	# # ASSERTION ERROR input.shape[1] == net.ci
-	# hour_100f_100w = simulate(prices, 100, 100, 1413763200, 10000, 3600)
-	# # tp 25804 tn 21390 fp 21195 fn 20811
-
-	# hour_200f_200w = simulate(prices, 200, 200, 1413763200, 10000, 3600)
-	# # tp 25034 tn 21707 fp 20878 fn 21581
-
-	# hour_300f_100w = simulate(prices, 300, 100, 1413763200, 10000, 3600)
-	# # tp 24725 tn 22141 fp 20444 fn 21890
-
-if __name__ == "__main__": main()
+if __name__ == "__main__": 
+	main()
 
