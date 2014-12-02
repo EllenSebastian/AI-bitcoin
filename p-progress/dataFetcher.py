@@ -1,19 +1,55 @@
-import urllib, json, datetime
-import time
-import pickle
-import schedule
-import pdb
+import urllib, json, datetime, time, pickle, schedule, pdb
 import numpy as np
-
+import matplotlib.pyplot as plt
 time_format = '%d/%m/%Y %H:%M:%S'
 
 n_transactions_wanted = 60 # number of transactions to keep per minute
-def read_data(file): 
+def read_data(file, timestamp = False): 
 	out = {}
 	for line in open(file): 
 		line_split = line.strip().split(',')
-		out[time_to_date(time.strptime(line.strip().split(',')[0], time_format) )] = float(line.strip().split(',')[1])
+		if timestamp: 
+			out[int(time.mktime(time.strptime(line.strip().split(',')[0],time_format)))] = float(line.strip().split(',')[1])
+		else: 
+			out[time_to_date(time.strptime(line.strip().split(',')[0], time_format) )] = float(line.strip().split(',')[1])
 	return out 
+
+
+# start_ts is the unix timestamp to start at
+# step is how often to return a point in seconds
+def interpolatedData(start_ts = None, end_ts = None, step = 3600, files = ['avg-confirmation-time.txt', 'estimated-transaction-volume.txt', 'my-wallet-transaction-volume.txt', 'total-bitcoins.txt', 
+                     'bitcoin-days-destroyed-cumulative.txt','hash-rate.txt', 'n-orphaned-blocks.txt','trade-volume.txt', 'bitcoin-days-destroyed.txt','market-cap.txt', 
+                     'n-transactions-excluding-popular.txt','transaction-fees.txt', 'blocks-size.txt','n-transactions-per-block.txt', 'tx-trade-ratio.txt', 
+                     'cost-per-transaction.txt','miners-revenue.txt', 'n-transactions.txt', 'difficulty.txt','my-wallet-n-tx.txt', 'n-unique-addresses.txt', 
+                     'estimated-transaction-volume-usd.txt', 'my-wallet-n-users.txt', 'output-volume.txt']): 
+    out = {}
+    for f in files: 
+    	out[f] = {} 
+        data = read_data('data/' + f, True)
+        x = [] 
+        y = []
+        for k in data.keys(): 
+        	x.append(k)
+        	y.append(data[k])
+        interpolator = interp1d(x, y, kind='cubic')
+        xnew = []
+        ynew = []
+        if start_ts is None: cur_start_ts = int(min(y))
+    	else: cur_start_ts = start_ts
+    	if end_ts is None: cur_end_ts = int(max(y))
+    	else: cur_end_ts = end_ts
+        pdb.set_trace()
+    	for ts in xrange(cur_start_ts, cur_end_ts, step): 
+    		try:
+	    		out[f][ts] = interpolator(ts)
+    			xnew.append(ts)
+    			ynew.append(interpolator(ts))
+    		except: 
+    			pdb.set_trace()
+    	plt.plot(x,y,'bo',xnew, interpolator(xnew),'r--')
+    	plt.show()
+    return out 
+
 
 def time_to_date(t): 
 	dt = datetime.datetime.fromtimestamp(time.mktime(t))
