@@ -24,6 +24,8 @@ for f in non_price_inputs:
 
 possible_train = []
 
+
+
 train_examples = transactions_per_minute.keys()
 for i in xrange(len(sorted_timestamps)-1):
     if sorted_timestamps[i] - sorted_timestamps[i+1] == 60 and sorted_timestamps[i] in transactions_per_minute: 
@@ -46,6 +48,7 @@ def convert_to_pct_change(vec):
     for i in xrange(1, len(vec)):
         out.append((vec[i] - vec[i-1]) / float(vec[i]))
     return out 
+
 
 def features_for_ts(train_ts): 
     last_60 = transactions_per_minute[train_ts]
@@ -108,11 +111,11 @@ for train_ts in train_examples:
     if len(all_Y) >= 1000: 
         break 
 
-#gp = PricePredictor.PricePredictor(np.array(all_features), np.array(all_Y), 'gp')
-#err, predictions = gp.crossValidation(10)
-#print err, predictions
+gp = PricePredictor.PricePredictor(np.array(all_features), np.array(all_Y), 'gp')
+err, predictions = gp.crossValidation(10)
+print err, predictions
 
-
+"""
 linear_model_ = PricePredictor.PricePredictor(all_features, all_Y, 'linear')
 linear_err, linear_predictions= linear_model_.crossValidation(10)
 # no outside variables: True pos 247 True neg 234 False pos 275 false_neg 244
@@ -139,7 +142,7 @@ err, predictions= pp_linear.crossValidation(10)
 perceptron_model = PricePredictor.PricePredictor(all_features, all_Y, 'perceptron')
 perceprton_err, perceptron_predictions= pp_linear.crossValidation(10)
 
-
+"""
 # predictions and all_Y are both percent price change arrays, 
 # where the index in predictions corresponds to the index in all_Y.
 def plot_predictions(predictions, true_Y):

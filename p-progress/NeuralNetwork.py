@@ -27,7 +27,8 @@ class Window(list):
 
 class NeuralNetwork:
 
-	def __init__(self, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600):
+	# nntype is ff, elman
+	def __init__(self, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600, nnType = 'ff'):
 
 		self.windowSize = windowSize
 		self.numFeatures = numFeatures
@@ -35,7 +36,7 @@ class NeuralNetwork:
 		self.numDataPoints = numDataPoints
 		self.frequency = frequency
 		self.priceData = aggregated_prices(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
-
+		self.type = nnType
 
 	def toPercentChange(self):
 		""" takes in an list of price data and returns a list of percentage change price data """
@@ -59,7 +60,18 @@ class NeuralNetwork:
 		targetVector = Window(self.numFeatures)
 		featureVector = Window(self.windowSize)
 
-		net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [self.windowSize, 1])
+		# [5,3,1]: 0.520810
+		# [10,5,1]: 0.546682
+		# [20,5,1]: 0.534308
+		# [20,10,5,1]: 0.509561
+		if self.type == 'elman':
+			net = nl.net.newelm([[-1, 1] for i in range(self.windowSize)], [5, 1])
+			pdb.set_trace()
+			net.layers[0].initf = nl.init.InitRand([-10, 10], 'wb')
+			net.layers[1].initf= nl.init.InitRand([-10, 10], 'wb')
+			net.init()
+		else:
+			net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [20, 10, 5, 1])
 
 		# iterate over the price data to len(data) - 2 to avoid overflow because we predict step + 2 at each iteration
 		for step in range(len(percentChangePriceData) - 2):
@@ -97,12 +109,25 @@ class NeuralNetwork:
 
 			def graphError(predictedPercentChanges, actualPercentChanges):
 				# considering error and only considering it as error when the signs are different
+				fn, fp, tn, tp = 0,0,0,0
+
 				def computeSignedError(pred, actual):
+					if pred > 0 and actual > 0: 
+						tp += 1
+					if pred < 0 and actual < 0: 
+						tn += 1
+					if pred > 0 and actual < 0: 
+						fp += 1
+					if pred < 0 and actual > 0: 
+						fn += 1
+
 					if (pred > 0 and actual > 0) or (pred < 0 and actual < 0):
 						return 0
-					else :
-						return abs(pred - actual / actual) * 100
 
+					else :
+						error =  abs(pred - actual)
+						print 'pred: {0}, actual: {1}, error: {2}'.format(pred, actual, error)
+						return error
 				signedError = map(lambda pred, actual: computeSignedError(pred, actual), predictedPercentChanges, actualPercentChanges)
 				pl.figure(2)
 				pl.title("Error")
@@ -114,8 +139,9 @@ class NeuralNetwork:
 				pl.figure(3)
 				pl.title("Actual vs Predictions")
 				pl.subplot(211)
-				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'r--', \
+				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
+				print 'fn {0} fp {1} tn {2} tp {3}'.format(fn, fp, tn, tp)
 
 			def percentageCorrect(predictions, actuals):
 				numCorrect = 0
@@ -123,7 +149,6 @@ class NeuralNetwork:
 					if (predictions[i] > 0 and actuals[i] > 0) or (predictions[i] < 0 and actuals[i] < 0):
 						numCorrect = numCorrect + 1
 				return numCorrect / float(len(predictions)) 
-
 			print "The percentage correct is %f." % (percentageCorrect(predictedPercentChanges, actualPercentChanges))
 			graphError(predictedPercentChanges, actualPercentChanges)		
 
@@ -136,6 +161,9 @@ def main():
 	print "Starting Neural Network Simulations"
 	# basicNeuralNetwork = NeuralNetwork()
 	# basicNeuralNetwork.simulate()
+
+	#neuralNetwork3 = NeuralNetwork(32)
+	#neuralNetwork3.simulate()
 
 	# # vary window size
 	neuralNetwork1 = NeuralNetwork(20, 10, 500, 60)
