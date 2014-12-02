@@ -86,14 +86,14 @@ class BitcoinMDP(util.MDP):
             t_prop[price] = t_prop[price] / sum_prop
         res = []
         for price in p_range:
-            reward = price * action
+            reward = -price * action
             res.append(((state[0] - 1, state[1] - action, price, state[3]), reward, t_prop[price]))
         return res
 
     def discount(self):
         return 1
 
-mdp = BitcoinMDP(3, 3, 0, 1, [-4, 4], 2)
+mdp = BitcoinMDP(3, 3, 0, 1, [-2, 2], 2)
 vio = ValueIteration()
 vio.solve(mdp)
 print vio.pi
