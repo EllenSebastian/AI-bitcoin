@@ -64,7 +64,15 @@ class NeuralNetwork:
 		# [10,5,1]: 0.546682
 		# [20,5,1]: 0.534308
 		# [20,10,5,1]: 0.509561
-		net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [20, 10, 5, 1])
+		if self.type == 'elman':
+			net = nl.net.newelm([[-1, 1] for i in range(self.windowSize)], [5, 1])
+			pdb.set_trace()
+			net.layers[0].initf = nl.init.InitRand([-1, 1], 'wb')
+			net.layers[1].initf= nl.init.InitRand([-1, 1], 'wb')
+
+			net.init()
+		else:
+			net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [20, 10, 5, 1])
 
 		# iterate over the price data to len(data) - 2 to avoid overflow because we predict step + 2 at each iteration
 		for step in range(len(percentChangePriceData) - 2):
@@ -106,6 +114,7 @@ class NeuralNetwork:
 						return 0
 					else :
 						error =  abs(pred - actual)
+						print 'pred: {0}, actual: {1}, error: {2}'.format(pred, actual, error)
 						return error
 				signedError = map(lambda pred, actual: computeSignedError(pred, actual), predictedPercentChanges, actualPercentChanges)
 				pl.figure(2)
@@ -118,7 +127,7 @@ class NeuralNetwork:
 				pl.figure(3)
 				pl.title("Actual vs Predictions")
 				pl.subplot(211)
-				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'r--', \
+				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
 
 			def percentageCorrect(predictions, actuals):
@@ -138,7 +147,7 @@ class NeuralNetwork:
 def main():
 
 	print "Starting Neural Network Simulations"
-	basicNeuralNetwork = NeuralNetwork()
+	basicNeuralNetwork = NeuralNetwork(nnType='elman')
 	basicNeuralNetwork.simulate()
 
 	#neuralNetwork3 = NeuralNetwork(32)
