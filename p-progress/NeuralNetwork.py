@@ -67,9 +67,8 @@ class NeuralNetwork:
 		if self.type == 'elman':
 			net = nl.net.newelm([[-1, 1] for i in range(self.windowSize)], [5, 1])
 			pdb.set_trace()
-			net.layers[0].initf = nl.init.InitRand([-1, 1], 'wb')
-			net.layers[1].initf= nl.init.InitRand([-1, 1], 'wb')
-
+			net.layers[0].initf = nl.init.InitRand([-10, 10], 'wb')
+			net.layers[1].initf= nl.init.InitRand([-10, 10], 'wb')
 			net.init()
 		else:
 			net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [20, 10, 5, 1])
@@ -109,9 +108,21 @@ class NeuralNetwork:
 
 			def graphError(predictedPercentChanges, actualPercentChanges):
 				# considering error and only considering it as error when the signs are different
+				fn, fp, tn, tp = 0,0,0,0
+
 				def computeSignedError(pred, actual):
+					if pred > 0 and actual > 0: 
+						tp += 1
+					if pred < 0 and actual < 0: 
+						tn += 1
+					if pred > 0 and actual < 0: 
+						fp += 1
+					if pred < 0 and actual > 0: 
+						fn += 1
+
 					if (pred > 0 and actual > 0) or (pred < 0 and actual < 0):
 						return 0
+
 					else :
 						error =  abs(pred - actual)
 						print 'pred: {0}, actual: {1}, error: {2}'.format(pred, actual, error)
@@ -129,6 +140,7 @@ class NeuralNetwork:
 				pl.subplot(211)
 				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
+				print 'fn {0} fp {1} tn {2} tp {3}'.format(fn, fp, tn, tp)
 
 			def percentageCorrect(predictions, actuals):
 				numCorrect = 0
@@ -136,7 +148,6 @@ class NeuralNetwork:
 					if (predictions[i] > 0 and actuals[i] > 0) or (predictions[i] < 0 and actuals[i] < 0):
 						numCorrect = numCorrect + 1
 				return numCorrect / float(len(predictions)) 
-
 			print "The percentage correct is %f." % (percentageCorrect(predictedPercentChanges, actualPercentChanges))
 			graphError(predictedPercentChanges, actualPercentChanges)		
 
@@ -147,7 +158,7 @@ class NeuralNetwork:
 def main():
 
 	print "Starting Neural Network Simulations"
-	basicNeuralNetwork = NeuralNetwork(nnType='elman')
+	basicNeuralNetwork = NeuralNetwork()
 	basicNeuralNetwork.simulate()
 
 	#neuralNetwork3 = NeuralNetwork(32)
