@@ -75,7 +75,7 @@ class NeuralNetwork:
 					
 					inputs = np.array(inputVector).reshape(self.numFeatures, self.windowSize)
 					targets = np.array(targetVector).reshape(self.numFeatures, 1)
-					err = net.train(inputs, targets, epochs = 500, goal = 0.005)
+					err = net.train(inputs, targets, goal = 0.01)
 					
 					# predict next time step
 					testFeatureVector = featureVector[1:] + [percentChangePriceData[step + 1]]	
@@ -83,6 +83,7 @@ class NeuralNetwork:
 					predictedPercentChanges.append(out[0][0])
 					predictedPrices.append((out[0][0] * self.priceData[step + 2]) + self.priceData[step + 2])
 					actualPercentChanges.append(percentChangePriceData[step + 2])
+					pdb.set_trace()
 					print "Done with %f of the process" % (float(step)/len(percentChangePriceData) * 100)
 
 		pl.figure(1)
@@ -133,12 +134,12 @@ class NeuralNetwork:
 def main():
 
 	print "Starting Neural Network Simulations"
-	basicNeuralNetwork = NeuralNetwork()
-	basicNeuralNetwork.simulate()
+	# basicNeuralNetwork = NeuralNetwork()
+	# basicNeuralNetwork.simulate()
 
 	# # vary window size
-	# neuralNetwork1 = NeuralNetwork(60, 10, 200)
-	# neuralNetwork1.simulate()
+	neuralNetwork1 = NeuralNetwork(20, 10, 500, 60)
+	neuralNetwork1.simulate()
 
 	# # larger window
 	# neuralNetwork2 = NeuralNetwork(48, 10, 200)
