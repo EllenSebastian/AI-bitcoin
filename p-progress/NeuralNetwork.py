@@ -61,7 +61,11 @@ class NeuralNetwork:
 		return percentChange
 
 	def predictPrice(self, time_stamp, n):
-		
+		"""
+			given a time_stamp and an n
+			returns two lists of length containing the predicted prices and percentChanges
+			return (percentChanges, predictedPrices) 
+		"""
 		price = self.mappedPriceData[time_stamp]
 		index = self.mappedListData.index([time_stamp, price])
 		numDataPoints = self.numFeatures + self.windowSize + 1
@@ -71,13 +75,13 @@ class NeuralNetwork:
 		priceData = self.mappedListData[startIndex : index]
 		newPriceData = map(lambda elem: elem[1], priceData)
 		percentChangePriceData = self.toPercentChange(newPriceData)
-		result = []
+		percentChanges = []
 		inputVector = Window(self.numFeatures)
 		targetVector = Window(self.numFeatures)
 		featureVector = Window(self.windowSize)
 		step = 0
 
-		while (step < len(percentChangePriceData) and len(result) < n):
+		while (step < len(percentChangePriceData) and len(percentChanges) < n):
 
 			featureVector.append(percentChangePriceData[step])
 			if featureVector.isFull():
@@ -92,12 +96,18 @@ class NeuralNetwork:
 					# predict next step
 					testFeatureVector = featureVector[1:] + [percentChangePriceData[step + 1]]
 					out = self.net.sim([np.array(testFeatureVector)])
-					pdb.set_trace()
-					result.append(out[0][0])
+					percentChanges.append(out[0][0])
 
 					percentChangePriceData.append(out[0][0])
 			step += 1
-		return result
+		pdb.set_trace()
+		predictedPrices = []
+		lastPrice = newPriceData[len(priceData) - 1]
+		for p in percentChanges:
+			newPrice = (p * lastPrice) + lastPrice
+			predictedPrices.append(newPrice)
+			lastPrice = newPrice  
+		return percentChanges, predictedPrices
 
 	def simulate(self):
 		# list holding all our predictions
