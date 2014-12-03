@@ -3,6 +3,7 @@ from sklearn.svm import SVR
 import pylab as pl
 import pickle, math, random, operator
 from NeuralNetwork import Window
+from NeuralNetwork import NeuralNetwork
 import pdb
 
 # data from Oct 20, 2014, backwards, every hour
@@ -79,11 +80,13 @@ class SupportVectorMachine:
 					print "Done with %f of the process" % (float(step)/len(percentChangePriceData) * 100)
 
 		pl.figure(1)
-		pl.title("Price Data")
+		pl.title("Actual vs Predicted Price")
 		pl.subplot(211)
 		pl.plot(range(len(predictedPrices)), self.priceData[len(self.priceData) - len(predictedPrices) :], 'b--')
 		pl.subplot(212)
 		pl.plot(range(len(predictedPrices)), predictedPrices, 'r--')
+		pl.xlabel("Time Step")
+		pl.ylabel("$ price value")
 
 		def graphData(predictedPercentChanges, actualPercentChanges):
 
@@ -100,15 +103,17 @@ class SupportVectorMachine:
 
 				signedError = map(lambda pred, actual: computeSignedError(pred, actual), predictedPercentChanges, actualPercentChanges)
 				pl.figure(2)
-				pl.title("Error")
+				pl.title("Error of Percentage Change Prediction")
 				pl.subplot(211)
 				pl.plot(signedError)
-				pl.xlabel('Time step')
-				pl.ylabel('Error (0 if signs are same and normal error if signs are different)')
+				pl.xlabel('Time Step')
+				pl.ylabel("Percentage Error")
 
 				pl.figure(3)
-				pl.title("Actual vs Predictions")
+				pl.title("Actual Percentage Change vs Predicted Percentage Change")
 				pl.subplot(211)
+				pl.xlabel('Time Step')
+				pl.ylabel("Percentage Error")
 				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
 
@@ -128,28 +133,58 @@ def main():
 
 	print "Starting Support Vector Machine Simulations"
 
-	svr = SupportVectorMachine()
-	svr.simulate()
+	# svr = SupportVectorMachine()
+	# svr.simulate()
 
-	# # larger window
+ # 	basicNeuralNetwork = NeuralNetwork()
+	# basicNeuralNetwork.simulate()
+
+
+	# svr1 = SupportVectorMachine(20, 10, 500, 60)
+	# svr1.simulate()
+
+	# neuralNetwork1 = NeuralNetwork(20, 10, 500, 60)
+	# neuralNetwork1.simulate()
+
+	# # # larger window
+
+	# svr2 = SupportVectorMachine(48, 10, 200)
+	# svr2.simulate()
+
 	# neuralNetwork2 = NeuralNetwork(48, 10, 200)
 	# neuralNetwork2.simulate()
 
-	# # large window
+	# # # large window
+
+	# svr3 = SupportVectorMachine(32, 10, 200)
+	# svr3.simulate()
+
 	# neuralNetwork3 = NeuralNetwork(32, 10, 200)
 	# neuralNetwork3.simulate()
 
-	# # day sized window
+	# # # day sized window
+
+	# svr4 = SupportVectorMachine(24, 10, 200)
+	# svr4.simulate()
+
 	# neuralNetwork4 = NeuralNetwork(24, 10, 200)
 	# neuralNetwork4.simulate()
 
 	# half a day sized window
-	# neuralNetwork5 = NeuralNetwork(12, 10, 200)
-	# neuralNetwork5.simulate()
+
+	svr5 = SupportVectorMachine(12, 10, 200)
+	svr5.simulate()
+
+	neuralNetwork5 = NeuralNetwork(12, 10, 200)
+	neuralNetwork5.simulate()
 
 	# quarter of a day sized window
-	#neuralNetwork6 = NeuralNetwork(6, 10, 200)
-	#neuralNetwork6.simulate()
+
+	# svr6 = SupportVectorMachine(6, 10, 200)
+	# svr6.simulate()
+
+	# neuralNetwork6 = NeuralNetwork(6, 10, 200)
+	# neuralNetwork6.simulate()
 
 
 if __name__ == "__main__": 
