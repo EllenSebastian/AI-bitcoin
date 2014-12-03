@@ -6,25 +6,37 @@ class BitcoinCSP:
 	def __init__(self, pricePredictions, nBTC, boughtAt):
 		self.pricePredictions = pricePredictions
 		self.nBTC = nBTC
+		timesteps = sorted(pricePredictions.keys())
+		timestep = abs(timesteps[1] - timesteps[0])
 		self.csp = CSP.CSP()
 		for ts in pricePredictions.keys(): 
-			self.csp.add_variable(ts,range(0,nBTC))
+			domain = range(0,nBTC+1)
+			self.csp.add_variable(ts,range(0,nBTC+1))
 			#it's better to assign a purchase to later because we dont' want to assign all
 			# purchases prematurely.
-			def laterIsBetter(val): return 1/math.log(float(ts))
-			self.csp.add_unary_potential(ts, laterIsBetter)
+			timeElapsed = float((ts - min(pricePredictions.keys())) / timestep)
+			#def earlierIsBetter(val): return 1.0/math.log(timeElapsed + 2) 
+			#self.csp.add_unary_potential(ts, earlierIsBetter)
 			def higherPriceBetter(val): 
-				if (pricePredictions[ts] - boughtAt) <= 0: 
-					return 0.001
+				if pricePredictions[ts] < boughtAt: 
+					return 0
+				elif val == 0:  
+					return 1 
 				else:	
-					return pricePredictions[ts] - boughtAt
+					print 'returning {0} for {1}'.format(pricePredictions[ts] - boughtAt , ts)
+					if (pricePredictions[ts] - boughtAt) > 1: 
+						return 1 + (pricePredictions[ts] - boughtAt)**val
+					else:
+						return 1 + val * (pricePredictions[ts] - boughtAt)
+
 			self.csp.add_unary_potential(ts, higherPriceBetter)
 		def sum_is_ok(sum): 
-			return sum <= self.nBTC
+			if sum > self.nBTC: return 0 
+			else: return 1 
 		sumVar = self.get_sum_variable('sellMax', pricePredictions.keys(), self.nBTC)
 		self.csp.add_unary_potential(sumVar, sum_is_ok)
 
-	def solve(self, mcv = True, lcv = True, mac = True):
+	def solve(self):
 		search = CSPsolver.BacktrackingSearch()
 		search.solve(self.csp)
 		pdb.set_trace()
@@ -74,10 +86,11 @@ class BitcoinCSP:
 
 
 """
-prices = {1413237600: 388.21083333333337, 1413244800: 391.70400000000006, 1413252000: 389.25254237288141, 1413259200: 390.60533333333331}
+prices = {1413237600: 400, 1413252000: 450}
 import pickle, dataFetcher, BitcoinCSP
 #priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 #prices = dataFetcher.aggregated_prices(priceData, 1413590400, 1413590400 + 24 * 60 * 60, 3600,'hash' )
-bCSP = BitcoinCSP.BitcoinCSP(prices,3,390) 
+bCSP = BitcoinCSP.BitcoinCSP(prices,2,390) 
 bCSP.solve()
+
 """

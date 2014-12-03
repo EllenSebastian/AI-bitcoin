@@ -215,6 +215,8 @@ class BacktrackingSearch():
             # When arc consistency check is not enabled.
             for val in ordered_values:
                 deltaWeight = self.get_delta_weight(assignment, var, val)
+                print(",({0},{1}):{2}".format(self.csp.varNames[var], val, deltaWeight))
+                #pdb.set_trace()
                 if deltaWeight > 0:
                     assignment[var] = val
                     self.backtrack(assignment, numAssigned + 1, weight * deltaWeight)
