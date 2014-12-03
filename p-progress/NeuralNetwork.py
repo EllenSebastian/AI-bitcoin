@@ -34,20 +34,70 @@ class NeuralNetwork:
 		self.numDataPoints = numDataPoints
 		self.frequency = frequency
 
-		pdb.set_trace()
 		if 'price' in whichData:		
 			# get bitcoin price data	
 			priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
-			self.listPriceData, self.mappedPriceData = aggregated_data(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
-
+			self.listPriceData, self.mappedPriceData, mappedListData, self.timeRange = aggregated_data(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
+			self.mappedListData = sorted(mappedListData, key=lambda elem: elem[0]) 
+			
 		self.type = nnType
 
-	def toPercentChange(self):
+		if self.type == 'elman':
+			self.net = nl.net.newelm([[-1, 1] for i in range(self.windowSize)], [5, 1])
+			pdb.set_trace()
+			self.net.layers[0].initf = nl.init.InitRand([-10, 10], 'wb')
+			self.net.layers[1].initf= nl.init.InitRand([-10, 10], 'wb')
+			self.net.init()
+		else:
+			self.net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [20, 10, 5, 1])
+
+		self.percentChangePriceData = self.toPercentChange(self.listPriceData)
+
+	def toPercentChange(self, data):
 		""" takes in an list of price data and returns a list of percentage change price data """
 		percentChange = list()
-		for i in range(1, len(self.listPriceData)):
-			percentChange.append((self.listPriceData[i] - self.listPriceData[i - 1])/self.listPriceData[i - 1])
+		for i in range(1, len(data)):
+			percentChange.append((data[i] - data[i - 1])/data[i - 1])
 		return percentChange
+
+	def predictPrice(self, time_stamp, n):
+		
+		price = self.mappedPriceData[time_stamp]
+		index = self.mappedListData.index([time_stamp, price])
+		numDataPoints = self.numFeatures + self.windowSize + 1
+		startIndex = index - numDataPoints
+		if (startIndex < 0):
+			print "please use a later time stamp. there are not enough data points in the past to train on."
+		priceData = self.mappedListData[startIndex : index]
+		newPriceData = map(lambda elem: elem[1], priceData)
+		percentChangePriceData = self.toPercentChange(newPriceData)
+		result = []
+		inputVector = Window(self.numFeatures)
+		targetVector = Window(self.numFeatures)
+		featureVector = Window(self.windowSize)
+		step = 0
+
+		while (step < len(percentChangePriceData) and len(result) < n):
+
+			featureVector.append(percentChangePriceData[step])
+			if featureVector.isFull():
+				inputVector.append(list(featureVector))
+				targetVector.append(percentChangePriceData[step + 1])
+				if inputVector.isFull() and targetVector.isFull():
+
+					inputs = np.array(inputVector).reshape(self.numFeatures, self.windowSize)
+					targets = np.array(targetVector).reshape(self.numFeatures, 1)
+					err = self.net.train(inputs, targets, goal = 0.01)
+
+					# predict next step
+					testFeatureVector = featureVector[1:] + [percentChangePriceData[step + 1]]
+					out = self.net.sim([np.array(testFeatureVector)])
+					pdb.set_trace()
+					result.append(out[0][0])
+
+					percentChangePriceData.append(out[0][0])
+			step += 1
+		return result
 
 	def simulate(self):
 		# list holding all our predictions
@@ -59,31 +109,23 @@ class NeuralNetwork:
 		# list holding the predicted prices
 		predictedPrices = list()
 
-		percentChangePriceData = self.toPercentChange()
 		inputVector = Window(self.numFeatures)
 		targetVector = Window(self.numFeatures)
 		featureVector = Window(self.windowSize)
+
 
 		# [5,3,1]: 0.520810
 		# [10,5,1]: 0.546682
 		# [20,5,1]: 0.534308
 		# [20,10,5,1]: 0.509561
-		if self.type == 'elman':
-			net = nl.net.newelm([[-1, 1] for i in range(self.windowSize)], [5, 1])
-			pdb.set_trace()
-			net.layers[0].initf = nl.init.InitRand([-10, 10], 'wb')
-			net.layers[1].initf= nl.init.InitRand([-10, 10], 'wb')
-			net.init()
-		else:
-			net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [20, 10, 5, 1])
 
 		# iterate over the price data to len(data) - 2 to avoid overflow because we predict step + 2 at each iteration
-		for step in range(len(percentChangePriceData) - 2):
+		for step in range(len(self.percentChangePriceData) - 2):
 
-			featureVector.append(percentChangePriceData[step])
+			featureVector.append(self.percentChangePriceData[step])
 			if featureVector.isFull():
 				inputVector.append(list(featureVector))
-				targetVector.append(percentChangePriceData[step + 1])
+				targetVector.append(self.percentChangePriceData[step + 1])
 				if inputVector.isFull() and targetVector.isFull():
 
 					# we have enough input and target vectors to train the neural network 
@@ -91,15 +133,15 @@ class NeuralNetwork:
 					
 					inputs = np.array(inputVector).reshape(self.numFeatures, self.windowSize)
 					targets = np.array(targetVector).reshape(self.numFeatures, 1)
-					err = net.train(inputs, targets, goal = 0.01)
+					err = self.net.train(inputs, targets, goal = 0.01)
 					
 					# predict next time step
-					testFeatureVector = featureVector[1:] + [percentChangePriceData[step + 1]]	
-					out = net.sim([np.array(testFeatureVector)])
+					testFeatureVector = featureVector[1:] + [self.percentChangePriceData[step + 1]]	
+					out = self.net.sim([np.array(testFeatureVector)])
 					predictedPercentChanges.append(out[0][0])
 					predictedPrices.append((out[0][0] * self.listPriceData[step + 2]) + self.listPriceData[step + 2])
-					actualPercentChanges.append(percentChangePriceData[step + 2])
-					print "Done with %f of the process" % (float(step)/len(percentChangePriceData) * 100)
+					actualPercentChanges.append(self.percentChangePriceData[step + 2])
+					print "Done with %f of the process" % (float(step)/len(self.percentChangePriceData) * 100)
 
 		pl.figure(1)
 		pl.title("Price Data")
@@ -152,15 +194,16 @@ class NeuralNetwork:
 def main():
 
 	print "Starting Neural Network Simulations"
+
 	# basicNeuralNetwork = NeuralNetwork()
 	# basicNeuralNetwork.simulate()
 
-	#neuralNetwork3 = NeuralNetwork(32)
-	#neuralNetwork3.simulate()
+	# neuralNetwork3 = NeuralNetwork(32)
+	# neuralNetwork3.simulate()
 
 	# # vary window size
-	neuralNetwork1 = NeuralNetwork(20, 10, 500, 60)
-	neuralNetwork1.simulate()
+	# neuralNetwork1 = NeuralNetwork(20, 10, 500, 60)
+	# neuralNetwork1.simulate()
 
 	# # larger window
 	# neuralNetwork2 = NeuralNetwork(48, 10, 200)
@@ -181,6 +224,11 @@ def main():
 	# quarter of a day sized window
 	#neuralNetwork6 = NeuralNetwork(6, 10, 200)
 	#neuralNetwork6.simulate()
+
+
+	# try predicting with this time_stamp 1413230400
+	neuralNetwork6 = NeuralNetwork(6, 10, 200)
+	neuralNetwork6.predictPrice(1413230400, 10)
 
 
 if __name__ == "__main__": 

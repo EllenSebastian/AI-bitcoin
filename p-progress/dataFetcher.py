@@ -174,7 +174,7 @@ def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation = 6
 	except Exception, e:
 		pdb.set_trace() 
 
-def aggregated_data(data, end_timestamp, n_aggregates = 100, aggregation = 60):
+def aggregated_data(data, end_timestamp, n_aggregates = 100, aggregation = 60, whichData="prices"):
 	"""
 	------------------------------------------------------------------------------
 	data - dict of unix timestamps to price
@@ -186,21 +186,25 @@ def aggregated_data(data, end_timestamp, n_aggregates = 100, aggregation = 60):
 	"""
 	try:
 		start_timestamp = end_timestamp - n_aggregates * aggregation
+		time_range = (start_timestamp, end_timestamp)
 		sorted_timestamps = sorted([x for x in data.keys() if x >= start_timestamp and x <= end_timestamp])
-		pdb.set_trace()
 		mappedData = {}
 		listData = []
+		mappedListData = []
 		cur_ts = 0
 		for i in range(n_aggregates):
 			matches = []
 			while sorted_timestamps[cur_ts] < (start_timestamp + aggregation):
 				cur_ts += 1
+
+				# different kinds of aggregation maybe needed for different kinds of data
 				matches.append(data[sorted_timestamps[cur_ts]])
-			mean = np.mean(matches)
+				mean = np.mean(matches)
 			listData.append(mean)
 			mappedData[start_timestamp] = mean
+			mappedListData.append([start_timestamp, mean])
 			start_timestamp += aggregation
-		return listData, mappedData
+		return listData, mappedData, mappedListData, time_range
 	except Exception, e:
 		pdb.set_trace()
 
