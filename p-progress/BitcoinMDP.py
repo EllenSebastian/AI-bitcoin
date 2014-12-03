@@ -17,6 +17,7 @@ class ValueIteration(util.MDPAlgorithm):
     # which means you will need to set pi and V (see util.py).
     def solve(self, mdp, epsilon=0.001):
         mdp.computeStates()
+        # BEGIN_YOUR_CODE (around 15 lines of code expected)
         prevV = {}
         for state in mdp.states:
             prevV[state] = 0
@@ -85,18 +86,14 @@ class BitcoinMDP(util.MDP):
             t_prop[price] = t_prop[price] / sum_prop
         res = []
         for price in p_range:
-            reward = -price * action
+            reward = price * action
             res.append(((state[0] - 1, state[1] - action, price, state[3]), reward, t_prop[price]))
         return res
 
     def discount(self):
         return 1
 
-"""
-mdp = BitcoinMDP(3, 3, 0, 1, [-2, 2], 2)
 mdp = BitcoinMDP(3, 3, 0, 1, [-4, 4], 2)
->>>>>>> first pass at CSP
 vio = ValueIteration()
 vio.solve(mdp)
 print vio.pi
-"""
