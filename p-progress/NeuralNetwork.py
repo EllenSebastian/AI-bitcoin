@@ -5,10 +5,9 @@ import pickle, math, random, operator
 import pdb
 
 execfile('dataFetcher.py')
-
+#priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 # data from Oct 20, 2014, backwards, every hour
-endTimeStamp= 1413763200
-
+#endTimeStamp= 1413763200
 class Window(list):
 
 	def __init__(self, size):
@@ -26,7 +25,7 @@ class Window(list):
 class NeuralNetwork:
 
 	# nntype is ff, elman
-	def __init__(self, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600, nnType = 'ff', whichData=['price']):
+	def __init__(self, endTimeStamp, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600, nnType = 'ff', whichData=['price']):
 
 		self.windowSize = windowSize
 		self.numFeatures = numFeatures
@@ -76,14 +75,14 @@ class NeuralNetwork:
 		priceData = self.mappedListData[startIndex : index]
 		newPriceData = map(lambda elem: elem[1], priceData)
 		percentChangePriceData = self.toPercentChange(newPriceData)
-		percentChanges = []
+		percentChanges = {}
 		inputVector = Window(self.numFeatures)
 		targetVector = Window(self.numFeatures)
 		featureVector = Window(self.windowSize)
 		step = 0
 
-		while (step < len(percentChangePriceData) and len(percentChanges) < n):
-
+		while (step < len(percentChangePriceData) and len(percentChanges.keys()) < n):
+			cur_ts = time_stamp + step * self.frequency
 			featureVector.append(percentChangePriceData[step])
 			if featureVector.isFull():
 				inputVector.append(list(featureVector))
@@ -97,16 +96,14 @@ class NeuralNetwork:
 					# predict next step
 					testFeatureVector = featureVector[1:] + [percentChangePriceData[step + 1]]
 					out = self.net.sim([np.array(testFeatureVector)])
-					percentChanges.append(out[0][0])
-
+					percentChanges[cur_ts] = out[0][0]
 					percentChangePriceData.append(out[0][0])
 			step += 1
-		pdb.set_trace()
-		predictedPrices = []
+		predictedPrices = {}
 		lastPrice = newPriceData[len(priceData) - 1]
-		for p in percentChanges:
-			newPrice = (p * lastPrice) + lastPrice
-			predictedPrices.append(newPrice)
+		for p in percentChanges.keys():
+			newPrice = (percentChanges[p] * lastPrice) + lastPrice
+			predictedPrices[p] = newPrice
 			lastPrice = newPrice  
 		return percentChanges, predictedPrices
 

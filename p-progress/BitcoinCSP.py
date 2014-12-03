@@ -3,7 +3,7 @@ import pickle, dataFetcher, BitcoinCSP, CSP, math, CSPsolver, pdb
 class BitcoinCSP: 
 
 	# pricePredictions
-	def __init__(self, pricePredictions, nBTC, boughtAt, prevPrice):
+	def __init__(self, pricePredictions, nBTC, boughtAt, prevPrice, timestep=3600):
 		self.pricePredictions = pricePredictions
 		self.nBTC = nBTC
 		timesteps = sorted(pricePredictions.keys())
@@ -30,7 +30,7 @@ class BitcoinCSP:
 					else:
 						return 1 + val * (pricePredictions[ts] - boughtAt)
 			def increasingDecreasing(val):
-				curPrice = pricePredictions[tss]
+				curPrice = pricePredictions[ts]
 				if ts > min(pricePredictions.keys()): 
 					prevPrice = pricePredictions[ts - timestep]
 				else: 
@@ -52,10 +52,7 @@ class BitcoinCSP:
 	def solve(self):
 		search = CSPsolver.BacktrackingSearch()
 		search.solve(self.csp)
-		for k in search.optimalAssignment.keys(): 
-			if search.optimalAssignment[k] > 0 and str(k.__class__) not in ("<type 'tuple'>","<type 'str'>"): 
-				print 'sell {0} bitcoin at {1} for {2}'.format(search.optimalAssignment[k], k, self.pricePredictions[k])
-		pdb.set_trace()
+		return search.optimalAssignment
 
 	def get_sum_variable(self, name, variables, maxSum):
 

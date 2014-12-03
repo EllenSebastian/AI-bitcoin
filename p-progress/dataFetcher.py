@@ -148,7 +148,6 @@ def read_granular_transactions(start_date=datetime.datetime(2010, 12, 01), end_d
 
 # must call pickle.load('bitcoin_prices.pickle') to get the prices and pass them in. 
 def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60, returnT="arr"): 
->>>>>>> first pass at CSP
 	"""
 	------------------------------------------------------------------------------
 	prices - dict of unix timestamps to price

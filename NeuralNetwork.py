@@ -1,15 +1,14 @@
 import numpy as np
 import neurolab as nl
 import pylab as pl
-import pickle, math, random, operator
-import pdb
+import pickle, math, random, operator, pdb
 
 # data from Oct 20, 2014, backwards, every hour
 endTimeStamp= 1413763200
 
 # get bitcoin price data	
 execfile('dataFetcher.py')
-priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
+#priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
 class Window(list):
 
