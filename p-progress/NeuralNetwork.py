@@ -4,12 +4,10 @@ import pylab as pl
 import pickle, math, random, operator
 import pdb
 
+execfile('dataFetcher.py')
+
 # data from Oct 20, 2014, backwards, every hour
 endTimeStamp= 1413763200
-
-# get bitcoin price data	
-execfile('dataFetcher.py')
-priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
 class Window(list):
 
@@ -28,21 +26,27 @@ class Window(list):
 class NeuralNetwork:
 
 	# nntype is ff, elman
-	def __init__(self, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600, nnType = 'ff'):
+	def __init__(self, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600, nnType = 'ff', whichData=['price']):
 
 		self.windowSize = windowSize
 		self.numFeatures = numFeatures
 		self.endTimeStamp = endTimeStamp
 		self.numDataPoints = numDataPoints
 		self.frequency = frequency
-		self.priceData = aggregated_prices(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
+
+		pdb.set_trace()
+		if 'price' in whichData:		
+			# get bitcoin price data	
+			priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
+			self.listPriceData, self.mappedPriceData = aggregated_data(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
+
 		self.type = nnType
 
 	def toPercentChange(self):
 		""" takes in an list of price data and returns a list of percentage change price data """
 		percentChange = list()
-		for i in range(1, len(self.priceData)):
-			percentChange.append((self.priceData[i] - self.priceData[i - 1])/self.priceData[i - 1])
+		for i in range(1, len(self.listPriceData)):
+			percentChange.append((self.listPriceData[i] - self.listPriceData[i - 1])/self.listPriceData[i - 1])
 		return percentChange
 
 	def simulate(self):
@@ -93,14 +97,14 @@ class NeuralNetwork:
 					testFeatureVector = featureVector[1:] + [percentChangePriceData[step + 1]]	
 					out = net.sim([np.array(testFeatureVector)])
 					predictedPercentChanges.append(out[0][0])
-					predictedPrices.append((out[0][0] * self.priceData[step + 2]) + self.priceData[step + 2])
+					predictedPrices.append((out[0][0] * self.listPriceData[step + 2]) + self.listPriceData[step + 2])
 					actualPercentChanges.append(percentChangePriceData[step + 2])
 					print "Done with %f of the process" % (float(step)/len(percentChangePriceData) * 100)
 
 		pl.figure(1)
 		pl.title("Price Data")
 		pl.subplot(211)
-		pl.plot(range(len(predictedPrices)), self.priceData[len(self.priceData) - len(predictedPrices) :], 'b--')
+		pl.plot(range(len(predictedPrices)), self.listPriceData[len(self.listPriceData) - len(predictedPrices) :], 'b--')
 		pl.subplot(212)
 		pl.plot(range(len(predictedPrices)), predictedPrices, 'r--')
 
@@ -108,24 +112,15 @@ class NeuralNetwork:
 
 			def graphError(predictedPercentChanges, actualPercentChanges):
 				# considering error and only considering it as error when the signs are different
-				fn, fp, tn, tp = 0,0,0,0
 
 				def computeSignedError(pred, actual):
-					if pred > 0 and actual > 0: 
-						tp += 1
-					if pred < 0 and actual < 0: 
-						tn += 1
-					if pred > 0 and actual < 0: 
-						fp += 1
-					if pred < 0 and actual > 0: 
-						fn += 1
 
 					if (pred > 0 and actual > 0) or (pred < 0 and actual < 0):
 						return 0
 
 					else :
 						error =  abs(pred - actual)
-						print 'pred: {0}, actual: {1}, error: {2}'.format(pred, actual, error)
+						# print 'pred: {0}, actual: {1}, error: {2}'.format(pred, actual, error)
 						return error
 				signedError = map(lambda pred, actual: computeSignedError(pred, actual), predictedPercentChanges, actualPercentChanges)
 				pl.figure(2)
@@ -140,7 +135,6 @@ class NeuralNetwork:
 				pl.subplot(211)
 				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
-				print 'fn {0} fp {1} tn {2} tp {3}'.format(fn, fp, tn, tp)
 
 			def percentageCorrect(predictions, actuals):
 				numCorrect = 0

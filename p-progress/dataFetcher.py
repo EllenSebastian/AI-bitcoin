@@ -187,6 +187,7 @@ def aggregated_data(data, end_timestamp, n_aggregates = 100, aggregation = 60):
 	try:
 		start_timestamp = end_timestamp - n_aggregates * aggregation
 		sorted_timestamps = sorted([x for x in data.keys() if x >= start_timestamp and x <= end_timestamp])
+		pdb.set_trace()
 		mappedData = {}
 		listData = []
 		cur_ts = 0
@@ -194,7 +195,7 @@ def aggregated_data(data, end_timestamp, n_aggregates = 100, aggregation = 60):
 			matches = []
 			while sorted_timestamps[cur_ts] < (start_timestamp + aggregation):
 				cur_ts += 1
-				matches.append(prices[sorted_timestamps[cur_ts]])
+				matches.append(data[sorted_timestamps[cur_ts]])
 			mean = np.mean(matches)
 			listData.append(mean)
 			mappedData[start_timestamp] = mean
