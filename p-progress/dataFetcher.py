@@ -147,7 +147,7 @@ def read_granular_transactions(start_date=datetime.datetime(2010, 12, 01), end_d
 # TODO update the data
 
 # must call pickle.load('bitcoin_prices.pickle') to get the prices and pass them in. 
-def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60): 
+def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation = 60): 
 	"""
 	------------------------------------------------------------------------------
 	prices - dict of unix timestamps to price
@@ -160,6 +160,7 @@ def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60
 	try: 
 		start_timestamp = end_timestamp - n_aggregates * aggregation
 		sorted_timestamps = sorted([x for x in prices.keys() if x >= start_timestamp and x <= end_timestamp])
+		pdb.set_trace()
 		out = []
 		cur_ts = 0
 		for i in range(n_aggregates): 
@@ -172,6 +173,35 @@ def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60
 		return out 
 	except Exception, e:
 		pdb.set_trace() 
+
+def aggregated_data(data, end_timestamp, n_aggregates = 100, aggregation = 60):
+	"""
+	------------------------------------------------------------------------------
+	data - dict of unix timestamps to price
+	end_timestamp - unix timestamp at which the procurement ends 
+	n-aggregates - number of (timestamp : price) elements returned
+	aggregation - number of seconds to aggregate over 
+	return list of data in chronological order ending at end_timestamp
+	------------------------------------------------------------------------------
+	"""
+	try:
+		start_timestamp = end_timestamp - n_aggregates * aggregation
+		sorted_timestamps = sorted([x for x in data.keys() if x >= start_timestamp and x <= end_timestamp])
+		mappedData = {}
+		listData = []
+		cur_ts = 0
+		for i in range(n_aggregates):
+			matches = []
+			while sorted_timestamps[cur_ts] < (start_timestamp + aggregation):
+				cur_ts += 1
+				matches.append(prices[sorted_timestamps[cur_ts]])
+			mean = np.mean(matches)
+			listData.append(mean)
+			mappedData[start_timestamp] = mean
+			start_timestamp += aggregation
+		return listData, mappedData
+	except Exception, e:
+		pdb.set_trace()
 
 def print_prices(prices): 
 	f = open('prices.csv','w')

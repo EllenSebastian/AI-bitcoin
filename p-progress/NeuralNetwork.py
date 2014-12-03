@@ -95,7 +95,6 @@ class NeuralNetwork:
 					predictedPercentChanges.append(out[0][0])
 					predictedPrices.append((out[0][0] * self.priceData[step + 2]) + self.priceData[step + 2])
 					actualPercentChanges.append(percentChangePriceData[step + 2])
-					pdb.set_trace()
 					print "Done with %f of the process" % (float(step)/len(percentChangePriceData) * 100)
 
 		pl.figure(1)
