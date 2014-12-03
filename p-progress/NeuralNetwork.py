@@ -72,6 +72,7 @@ class NeuralNetwork:
 		startIndex = index - numDataPoints
 		if (startIndex < 0):
 			print "please use a later time stamp. there are not enough data points in the past to train on."
+			return 
 		priceData = self.mappedListData[startIndex : index]
 		newPriceData = map(lambda elem: elem[1], priceData)
 		percentChangePriceData = self.toPercentChange(newPriceData)
