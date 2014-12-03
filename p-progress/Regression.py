@@ -119,25 +119,25 @@ import regression, PricePredictor
 linear_model_ = PricePredictor.PricePredictor(all_features, all_Y, 'linear')
 linear_err, linear_predictions= linear_model_.crossValidation(10)
 # no outside variables: True pos 247 True neg 234 False pos 275 false_neg 244
-# outside variables:    True pos 256 True neg 250 False pos 249 false_neg 245
+# outside variables:    True pos 256 True neg 250 False pos 249 false_neg 245 -->50.6
 
 # has very bad high predictions: 113740%
 
 bayesian_model = PricePredictor.PricePredictor(all_features, all_Y, 'BayesianRidge')
 bayes_err, bayes_predictions= bayesian_model.crossValidation(10)
 # no outside variables: True pos 241 True neg 261 False pos 244 false_neg 254
-# outside variables: True pos 240 True neg 259 False pos 243 false_neg 258
+# outside variables: True pos 240 True neg 259 False pos 243 false_neg 258 --> 47.9
 
 
 ridge_model = PricePredictor.PricePredictor(all_features, all_Y, 'ridge')
 ridge_err, ridge_predictions= ridge_model.crossValidation(10)
 # outside variables: True pos 239 True neg 206 False pos 231 false_neg 208
-# no outside variables: True pos 239 True neg 257 False pos 245 false_neg 259
+# no outside variables: True pos 239 True neg 257 False pos 245 false_neg 259 --> 49.1%
 
 
 logistic_model = PricePredictor.PricePredictor(all_features, all_Y, 'logistic') # does not finish
 err, predictions= pp_linear.crossValidation(10)
-# True pos 228 True neg 271 False pos 233 false_neg 268
+# True pos 228 True neg 271 False pos 233 false_neg 268 --> 49.9%
 
 perceptron_model = PricePredictor.PricePredictor(all_features, all_Y, 'perceptron')
 perceprton_err, perceptron_predictions= pp_linear.crossValidation(10)
