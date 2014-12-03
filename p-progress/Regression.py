@@ -106,8 +106,6 @@ for train_ts in train_examples:
     all_features.append(features)
     all_Y.append((prices[train_ts + dt] - prices[train_ts]) / float(prices[train_ts]))
     # average price over the last 60 minutes, last 24 hours, last 60 days
-    if train_ts == train_examples[0]: 
-        pdb.set_trace()
     if len(all_Y) >= 1000: 
         break 
 
@@ -116,6 +114,8 @@ err, predictions = gp.crossValidation(10)
 print err, predictions
 
 """
+
+import regression, PricePredictor
 linear_model_ = PricePredictor.PricePredictor(all_features, all_Y, 'linear')
 linear_err, linear_predictions= linear_model_.crossValidation(10)
 # no outside variables: True pos 247 True neg 234 False pos 275 false_neg 244

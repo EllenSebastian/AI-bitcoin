@@ -147,7 +147,8 @@ def read_granular_transactions(start_date=datetime.datetime(2010, 12, 01), end_d
 # TODO update the data
 
 # must call pickle.load('bitcoin_prices.pickle') to get the prices and pass them in. 
-def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation = 60): 
+def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60, returnT="arr"): 
+>>>>>>> first pass at CSP
 	"""
 	------------------------------------------------------------------------------
 	prices - dict of unix timestamps to price
@@ -160,15 +161,19 @@ def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation = 6
 	try: 
 		start_timestamp = end_timestamp - n_aggregates * aggregation
 		sorted_timestamps = sorted([x for x in prices.keys() if x >= start_timestamp and x <= end_timestamp])
-		pdb.set_trace()
-		out = []
+		if returnT == "arr": out = []
+		else: out = {}
 		cur_ts = 0
 		for i in range(n_aggregates): 
+			print i , n_aggregates
 			matches = []
 			while sorted_timestamps[cur_ts] < (start_timestamp + aggregation): 
 				cur_ts += 1
 				matches.append(prices[sorted_timestamps[cur_ts]])
-			out.append(np.mean(matches))
+			if returnT == "arr":
+				out.append(np.mean(matches))
+			else:
+				out[start_timestamp + i * aggregation] = np.mean(matches)
 			start_timestamp += aggregation
 		return out 
 	except Exception, e:
