@@ -126,7 +126,7 @@ linear_err, linear_predictions= linear_model_.crossValidation(10)
 bayesian_model = PricePredictor.PricePredictor(all_features, all_Y, 'BayesianRidge')
 bayes_err, bayes_predictions= bayesian_model.crossValidation(10)
 # no outside variables: True pos 241 True neg 261 False pos 244 false_neg 254
-# outside variables: True pos 240 True neg 259 False pos 243 false_neg 258 --> 47.9
+# outside variables: True pos 240 True neg 259 False pos 243 false_neg 258 --> 49.9
 
 
 ridge_model = PricePredictor.PricePredictor(all_features, all_Y, 'ridge')
