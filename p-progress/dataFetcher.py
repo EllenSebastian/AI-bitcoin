@@ -172,7 +172,8 @@ def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60
 			if returnT == "arr":
 				out.append(np.mean(matches))
 			else:
-				out[start_timestamp + i * aggregation] = np.mean(matches)
+				print 'adding {0}+ {1} * {2} = {3}'.format(start_timestamp, i, aggregation, start_timestamp + i * aggregation)
+				out[start_timestamp] = np.mean(matches)
 			start_timestamp += aggregation
 		return out 
 	except Exception, e:
