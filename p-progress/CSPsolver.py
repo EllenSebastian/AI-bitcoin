@@ -96,9 +96,9 @@ class BacktrackingSearch():
         Prints a message summarizing the outcome of the solver.
         """
         if self.optimalAssignment:
-            print "Found %d optimal assignments with weight %f in %d operations" % \
+            #print "Found %d optimal assignments with weight %f in %d operations" % \
                 (self.numOptimalAssignments, self.optimalWeight, self.numOperations)
-            print "First assignment took %d operations" % self.firstAssignmentNumOperations
+            #print "First assignment took %d operations" % self.firstAssignmentNumOperations
         else:
             print "No solution was found."
 

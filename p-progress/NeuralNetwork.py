@@ -21,11 +21,12 @@ class Window(list):
 	def isFull(self):
 		return len(self) == self.size
 
+priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
 class NeuralNetwork:
 
 	# nntype is ff, elman
-	def __init__(self, endTimeStamp, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600, nnType = 'ff', whichData=['price']):
+	def __init__(self, endTimeStamp, priceData, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 60, nnType = 'ff', whichData=['price']):
 
 		self.windowSize = windowSize
 		self.numFeatures = numFeatures
@@ -35,7 +36,6 @@ class NeuralNetwork:
 
 		if 'price' in whichData:		
 			# get bitcoin price data	
-			priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 			self.listPriceData, self.mappedPriceData, mappedListData, self.timeRange = aggregated_data(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
 			self.mappedListData = sorted(mappedListData, key=lambda elem: elem[0]) 
 			
@@ -59,7 +59,7 @@ class NeuralNetwork:
 			percentChange.append((data[i] - data[i - 1])/data[i - 1])
 		return percentChange
 
-	def predictPrice(self, time_stamp, n):
+	def predictPrice(self, time_stamp, n = 1):
 		"""
 			given a time_stamp and an n
 			returns two lists of length containing the predicted prices and percentChanges
@@ -203,39 +203,39 @@ def main():
 
 	print "Starting Neural Network Simulations"
 
-	# basicNeuralNetwork = NeuralNetwork()
-	# basicNeuralNetwork.simulate()
+	basicNeuralNetwork = NeuralNetwork(1413230400) 
+	basicNeuralNetwork.simulate() # 52
 
-	# neuralNetwork3 = NeuralNetwork(32)
-	# neuralNetwork3.simulate()
+	neuralNetwork3 = NeuralNetwork(1413230400, priceData, 32)
+	neuralNetwork3.simulate() # 49 
 
 	# # vary window size
-	# neuralNetwork1 = NeuralNetwork(20, 10, 500, 60)
-	# neuralNetwork1.simulate()
+	neuralNetwork1 = NeuralNetwork(1413230400, priceData, 20, 10, 500, 60)
+	neuralNetwork1.simulate() # 50.3
 
 	# # larger window
-	# neuralNetwork2 = NeuralNetwork(48, 10, 200)
-	# neuralNetwork2.simulate()
+	neuralNetwork2 = NeuralNetwork(1413230400, priceData, 48, 10, 200)
+	neuralNetwork2.simulate() #48 
 
 	# # large window
-	# neuralNetwork3 = NeuralNetwork(32, 10, 200)
-	# neuralNetwork3.simulate()
+	neuralNetwork3 = NeuralNetwork(1413230400, priceData, 32, 10, 200)
+	neuralNetwork3.simulate() #55 
 
 	# # day sized window
-	# neuralNetwork4 = NeuralNetwork(24, 10, 200)
-	# neuralNetwork4.simulate()
+	neuralNetwork4 = NeuralNetwork(1413230400, priceData, 24, 10, 200)
+	neuralNetwork4.simulate() # 56
 
 	# half a day sized window
-	# neuralNetwork5 = NeuralNetwork(12, 10, 200)
-	# neuralNetwork5.simulate()
+	neuralNetwork5 = NeuralNetwork(1413230400, priceData, 12, 10, 200)
+	neuralNetwork5.simulate() # 49 
 
 	# quarter of a day sized window
-	#neuralNetwork6 = NeuralNetwork(6, 10, 200)
-	#neuralNetwork6.simulate()
+	neuralNetwork6 = NeuralNetwork(1413230400, priceData, 6, 10, 200)
+	neuralNetwork6.simulate() # 51 
 
 
 	# try predicting with this time_stamp 1413230400
-	neuralNetwork6 = NeuralNetwork(6, 10, 200)
+	neuralNetwork6 = NeuralNetwork(1413230400, 6, 10, 200)
 	neuralNetwork6.predictPrice(1413230400, 10)
 
 
