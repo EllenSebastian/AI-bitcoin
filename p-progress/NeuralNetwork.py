@@ -51,6 +51,7 @@ class NeuralNetwork:
 			self.net = nl.net.newff([[-1, 1] for i in range(self.windowSize)], [20, 10, 5, 1])
 
 		self.percentChangePriceData = self.toPercentChange(self.listPriceData)
+		self.percentChangeOfPercentChangePriceData = self.toPercentChange(self.percentChangePriceData)
 
 	def toPercentChange(self, data):
 		""" takes in an list of price data and returns a list of percentage change price data """
@@ -107,7 +108,107 @@ class NeuralNetwork:
 			lastPrice = newPrice  
 		return percentChanges, predictedPrices
 
-	def simulate(self):
+	def simulateWithSecondDerivative(self):
+		"""
+		identical to simulateWithFirstDerivative
+		"""
+
+		# second derivate lists
+		predictedPPChanges = list()
+		actualPPChanges = list()
+
+		# first derivative lists
+		predictedPChanges = list()
+		actualPChanges = list()
+
+		predictedPrices = list()
+		actualPrices = list()
+
+		inputVector = Window(self.numFeatures)
+		targetVector = Window(self.numFeatures)
+		featureVector = Window(self.windowSize)
+
+
+		# iterate over the price data to len(data) - 2 to avoid overflow because we predict step + 2 at each iteration
+		for step in range(len(self.percentChangeOfPercentChangePriceData) - 2):
+			featureVector.append(self.percentChangeOfPercentChangePriceData[step])
+			if featureVector.isFull():
+				inputVector.append(list(featureVector))
+				targetVector.append(self.percentChangeOfPercentChangePriceData[step + 1])
+				if inputVector.isFull() and targetVector.isFull():
+
+					inputs = np.array(inputVector).reshape(self.numFeatures, self.windowSize)
+					targets = np.array(targetVector).reshape(self.numFeatures, 1)
+					err = self.net.train(inputs, targets, goal = 0.01)
+
+					testFeatureVector = featureVector[1:] + [self.percentChangePriceData[step + 1]]	
+					out = self.net.sim([np.array(testFeatureVector)])
+
+					predictedPPChanges.append(out[0][0])
+					actualPPChanges.append(self.percentChangeOfPercentChangePriceData[step + 2])
+					
+					percentChangePrediction = (out[0][0] * self.percentChangePriceData[step + 2]) + self.percentChangePriceData[step + 2] 
+					predictedPChanges.append(percentChangePrediction)
+					actualPChanges.append(self.percentChangePriceData[step + 3])
+					
+					pricePrediction = (percentChangePrediction * self.listPriceData[step + 3]) + self.listPriceData[step + 3]
+					predictedPrices.append(pricePrediction)
+					actualPrices.append(self.listPriceData[step + 4])
+
+					print "Done with %f of the process" % (float(step)/len(self.percentChangeOfPercentChangePriceData) * 100)		
+
+		pl.figure(1)
+		pl.title("Price Data")
+		pl.subplot(211)
+		pl.plot(range(len(actualPrices)), actualPrices, 'b--')
+		pl.subplot(212)
+		pl.plot(range(len(predictedPrices)), predictedPrices, 'r--')
+
+		def graphData(predictedPercentChanges, actualPercentChanges, title):
+
+			def graphError(predictedPercentChanges, actualPercentChanges, title):
+				# considering error and only considering it as error when the signs are different
+
+				def computeSignedError(pred, actual):
+
+					if (pred > 0 and actual > 0) or (pred < 0 and actual < 0):
+						return 0
+
+					else :
+						error =  abs(pred - actual)
+						# print 'pred: {0}, actual: {1}, error: {2}'.format(pred, actual, error)
+						return error
+				signedError = map(lambda pred, actual: computeSignedError(pred, actual), predictedPercentChanges, actualPercentChanges)
+				pl.figure(2)
+				pl.title( title + " Error")
+				pl.subplot(211)
+				pl.plot(signedError)
+				pl.xlabel('Time step')
+				pl.ylabel('Error (0 if signs are same and normal error if signs are different)')
+
+				pl.figure(3)
+				pl.title(title + " Actual vs Predictions")
+				pl.subplot(211)
+				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
+					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
+
+
+			def percentageCorrect(predictions, actuals):
+				numCorrect = 0
+				for i in range(len(predictions)):
+					if (predictions[i] > 0 and actuals[i] > 0) or (predictions[i] < 0 and actuals[i] < 0):
+						numCorrect = numCorrect + 1
+				return numCorrect / float(len(predictions)) 
+			print "The percentage correct is %f." % (percentageCorrect(predictedPercentChanges, actualPercentChanges))
+			graphError(predictedPercentChanges, actualPercentChanges, title)	
+
+		graphData(predictedPPChanges, actualPPChanges, "Second Derivative")
+		#graphData(predictedPChanges, actualPChanges, "First Derivative")
+		pl.show()
+
+
+
+	def simulateWithFirstDerivative(self):
 		# list holding all our predictions
 		predictedPercentChanges = list() 
 
@@ -120,7 +221,6 @@ class NeuralNetwork:
 		inputVector = Window(self.numFeatures)
 		targetVector = Window(self.numFeatures)
 		featureVector = Window(self.windowSize)
-
 
 		# [5,3,1]: 0.520810
 		# [10,5,1]: 0.546682
@@ -146,6 +246,7 @@ class NeuralNetwork:
 					# predict next time step
 					testFeatureVector = featureVector[1:] + [self.percentChangePriceData[step + 1]]	
 					out = self.net.sim([np.array(testFeatureVector)])
+
 					predictedPercentChanges.append(out[0][0])
 					predictedPrices.append((out[0][0] * self.listPriceData[step + 2]) + self.listPriceData[step + 2])
 					actualPercentChanges.append(self.percentChangePriceData[step + 2])
@@ -202,9 +303,8 @@ class NeuralNetwork:
 def main():
 
 	print "Starting Neural Network Simulations"
-
-	basicNeuralNetwork = NeuralNetwork(1413230400) 
-	basicNeuralNetwork.simulate() # 52
+	basicNeuralNetwork = NeuralNetwork(1413230400, 6, 10, 200)
+	basicNeuralNetwork.simulateWithSecondDerivative()
 
 	neuralNetwork3 = NeuralNetwork(1413230400, priceData, 32)
 	neuralNetwork3.simulate() # 49 
@@ -235,8 +335,7 @@ def main():
 
 
 	# try predicting with this time_stamp 1413230400
-	neuralNetwork6 = NeuralNetwork(1413230400, 6, 10, 200)
-	neuralNetwork6.predictPrice(1413230400, 10)
+>>>>>>> d9eefa9197574d1f646b979286312b8a5226ed36
 
 
 if __name__ == "__main__": 
