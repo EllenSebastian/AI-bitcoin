@@ -12,8 +12,8 @@ class BuySellCSP:
 	# actualPrices; hash from ts to btc price
 	# boughtAt: price or average price the btc were bought at 
 	# ts = current (not future) ts
-	def __init__(self, pricePrediction, actualPrices, nBTC, boughtAt, ts, btclimit=20, timestep=60, nothingWeight = 100):
-		self.pricePrediction = pricePrediction
+	def __init__(self, pricePrediction, actualPrices, nBTC, boughtAt, ts, btclimit=20, timestep=60, nothingWeight = 100, multiplePrediction = False):
+		self.pricePrediction = pricePrediction # for multiplePredictions = False, is a single number; for multiplePredictions=True, is a hash from ts to number
 		self.nothingWeight = nothingWeight
 		self.nBTC = nBTC
 		self.csp = CSP.CSP()
@@ -22,11 +22,13 @@ class BuySellCSP:
 		self.timestep = timestep
 		self.csp.add_variable('action_at_cur_ts', ['sell', 'nothing', 'buy']) # may change to better domain later
 		self.btclimit = btclimit
+		self.multiplePredictions = multiplePrediction
+		#pdb.set_trace()
 		def sell_higher(val): 
 			if self.boughtAt < self.actualPrices[ts] and val == 'sell': 
 				return 1 # ok to sell at a high price
 			elif self.boughtAt < self.actualPrices[ts] and val == 'buy':
-				return 0.5 # technically ok to buy at a higher price than you did before
+				return 0.5 # technically     ok to buy at a higher price than you did before
 			elif self.boughtAt > self.actualPrices[ts] and val == 'sell': 
 				# trying to sell at a low price
 				return 0 # do not sell at a low price
@@ -37,23 +39,51 @@ class BuySellCSP:
 			return 0 # don't sell at a lower price
 		# here, check for INCREASES of prediction over current price --> buy
 		def buy_at_trough(val): 
+			#pdb.set_trace()
 			if val == 'buy' and self.nBTC >= self.btclimit: 
 				return 0
-			print 'pricePrediction: {0}, actual: {1}'.format(pricePrediction, self.actualPrices[ts])
-			if pricePrediction > self.actualPrices[ts] and val == 'buy': # maybe a trough: buy when price will increase
-				# scale by the number of price decreases before 
-				ts_prev = ts
-				nDecrease = 0 
-				# checking for decreases. if it was a straight increase, better to buy. if it's a trough, also buy. 
-				for i in xrange(1,20):
-					ts_prev = ts - (i * self.timestep)
-					if self.actualPrices[ts_prev] < self.actualPrices[ts_prev 0 self.timestep]:
-						nDecrease += 1
-					# the longer the increase lasted, the more likely it is a trough
-					# the longer the decrease lasted, the more likely it is a trough
-				print 'returning nDecrease = {0}'.format(nDecrease)
-				return float(nDecrease) / 10# return at least 2: better to buy on an increase, even better if it's a trough.
-			return 1 # i don't care 
+			if val != 'buy': 
+				return 1 
+			if not self.multiplePredictions: 
+				#print 'pricePrediction: {0}, actual: {1}'.format(pricePrediction, self.actualPrices[ts])
+				if val == 'buy' and (pricePrediction > self.actualPrices[ts]): # maybe a trough: buy when price will increase
+					# scale by the number of price decreases before 
+					ts_prev = ts
+					nDecrease = 0
+					nIncrease = 0
+					# checking for decreases. if it was a straight increase, better to buy. if it's a trough, also buy. 
+					for i in xrange(1,21):
+						ts_prev = ts - (i * self.timestep)
+						print ts_prev
+						if ts_prev in self.actualPrices.keys() and ts_prev - self.timestep in self.actualPrices.keys(): 
+							try: 
+								if self.actualPrices[ts_prev] < self.actualPrices[ts_prev - self.timestep]:
+									nDecrease += 1
+								else:
+									nIncrease += 1 
+							except Exception, e: 
+								dataFetcher.printException()
+								pdb.set_trace()
+
+							# the longer the increase lasted, the more likely it is a trough
+							# the longer the decrease lasted, the more likely it is a trough
+
+					print 'returning nDecrease = {0}'.format(nDecrease)
+					return float(nDecrease + 1) / float(nIncrease + 1)# return at least 2: better to buy on an increase, even better if it's a trough.
+				else: 
+					return 1 
+			else: 
+				# weight is proportional to how many predictions are above it 
+				firstPrediction = min(pricePrediction.keys())
+				nAbove = 0
+				nBelow = 0
+				for k in pricePrediction.keys(): 
+					if pricePrediction[k] > pricePrediction[firstPrediction]: 
+						nAbove += 1
+					else: 
+						nBelow += 1 
+				return float(nAbove + 1) / float(nBelow + 1)
+
 		# here, check for DECREASES of prediction over current price --> sell
 		def sell_at_peak(val): 
 			if val == 'sell' and nBTC <= 0: 
@@ -63,13 +93,17 @@ class BuySellCSP:
 			if pricePrediction < self.actualPrices[ts] and val == 'sell': # this is not a peak
 				# scale by the number of price decreases before 
 				nIncrease = 0 
+				nDecrease = 0
 				for i in xrange(1,21):
 					ts_prev = ts - (i * self.timestep)
-					if self.actualPrices[ts_prev] > self.actualPrices[ts_prev - self.timestep]:
-						nIncrease += 1
+					if ts_prev in self.actualPrices.keys() and ts_prev - self.timestep in self.actualPrices.keys(): 
+						if self.actualPrices[ts_prev] > self.actualPrices[ts_prev - self.timestep]:
+							nIncrease += 1
+						else: 
+							nDecrease += 1 
 					# the longer the increase lasted, the more likely it is a trough
 				#print 'returning nIncrease = {0}'.format(nIncrease)
-				return float(nIncrease) / 10.0 # better to buy on a decrease, even better if it's a peak.
+				return float(nIncrease + 1) / float(nDecrease + 1)# better to buy on a decrease, even better if it's a peak.
 			return 1 # i don't care 
 		def weighting(val): 
 			if val == 'nothing': 

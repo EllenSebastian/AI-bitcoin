@@ -195,7 +195,6 @@ def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60
 		for i in range(n_aggregates):
 			if i % 10000 == 0: 
 				print i  
-			print i , n_aggregates
 			matches = []
 			while sorted_timestamps[cur_ts] < (start_timestamp + aggregation): 
 				cur_ts += 1
