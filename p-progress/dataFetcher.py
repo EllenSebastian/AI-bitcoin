@@ -1,4 +1,4 @@
-import urllib, json, datetime, time, pickle, schedule, pdb
+import urllib, json, datetime, time, pickle, schedule, pdb, sys, linecache
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
@@ -145,6 +145,35 @@ def read_granular_transactions(start_date=datetime.datetime(2010, 12, 01), end_d
 	return prices 
 
 # TODO update the data
+def impute_hash(out, aggregation): 
+	try: 
+		for k in sorted(out.keys()): 
+			if out[k] is None: 
+				prev, next = k,k
+				while prev in out.keys() and out[prev] is None:
+					prev -= aggregation
+				while next in out.keys() and out[next] is None:
+					next += aggregation
+				if (next in out.keys() and out[next] is not None) and (prev in out.keys() and out[prev] is not None):
+					out[k] = np.mean([out[next], out[prev]])
+				elif next in out.keys() and out[next] is not None: 
+					out[k] = out[next]
+				else: 
+					out[k] = out[prev]
+	except Exception, e: 
+		pdb.set_trace()
+	return out 
+
+
+def PrintException():
+    exc_type, exc_obj, tb = sys.exc_info()
+    f = tb.tb_frame
+    lineno = tb.tb_lineno
+    filename = f.f_code.co_filename
+    linecache.checkcache(filename)
+    line = linecache.getline(filename, lineno, f.f_globals)
+    print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
+
 
 # must call pickle.load('bitcoin_prices.pickle') to get the prices and pass them in. 
 def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60, returnT="arr"): 
@@ -163,21 +192,32 @@ def aggregated_prices(prices, end_timestamp, n_aggregates = 100, aggregation= 60
 		if returnT == "arr": out = []
 		else: out = {}
 		cur_ts = 0
-		for i in range(n_aggregates): 
+		for i in range(n_aggregates):
+			if i % 10000 == 0: 
+				print i  
 			print i , n_aggregates
 			matches = []
 			while sorted_timestamps[cur_ts] < (start_timestamp + aggregation): 
 				cur_ts += 1
 				matches.append(prices[sorted_timestamps[cur_ts]])
-			if returnT == "arr":
-				out.append(np.mean(matches))
+			if len(matches) == 0: 
+				meann = None
 			else:
-				print 'adding {0}+ {1} * {2} = {3}'.format(start_timestamp, i, aggregation, start_timestamp + i * aggregation)
-				out[start_timestamp] = np.mean(matches)
+				meann = np.mean(matches)
+			if returnT == "arr":
+				out.append(meann)
+			else:
+				out[start_timestamp] = meann
 			start_timestamp += aggregation
-		return out 
+		if returnT == 'arr': 
+			return impute_vector(out)
+		else:
+			return impute_hash(out, aggregation)
 	except Exception, e:
+		PrintException()
 		pdb.set_trace() 
+
+
 
 def aggregated_data(data, end_timestamp, n_aggregates = 100, aggregation = 60, whichData="prices"):
 	"""

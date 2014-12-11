@@ -21,11 +21,12 @@ class Window(list):
 	def isFull(self):
 		return len(self) == self.size
 
+priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
 class NeuralNetwork:
 
-	# nntype is ff, elman
 	def __init__(self, endTimeStamp, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600, nnType = 'ff', whichData=['price'], normalize=True):
+	# nntype is ff, elman
 
 		self.windowSize = windowSize
 		self.numFeatures = numFeatures
@@ -36,7 +37,6 @@ class NeuralNetwork:
 
 		if 'price' in whichData:		
 			# get bitcoin price data	
-			priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 			self.listPriceData, self.mappedPriceData, mappedListData, self.timeRange = aggregated_data(priceData, self.endTimeStamp, self.numDataPoints, self.frequency)
 			self.mappedListData = sorted(mappedListData, key=lambda elem: elem[0]) 
 			
@@ -83,7 +83,7 @@ class NeuralNetwork:
 			percentChange.append((data[i] - data[i - 1])/data[i - 1])
 		return percentChange
 
-	def predictPrice(self, time_stamp, n):
+	def predictPrice(self, time_stamp, n = 1):
 		"""
 			given a time_stamp and an n
 			returns two lists of length containing the predicted prices and percentChanges
@@ -367,14 +367,6 @@ def main():
 	# basicNeuralNetwork1.simulateWithFirstDerivative()
 
 	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 48, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
-
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 24, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
-
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 20, 10, 500)
 	# basicNeuralNetwork1.simulateWithSecondDerivative()
 	# basicNeuralNetwork1.simulateWithFirstDerivative()
 
