@@ -23,6 +23,7 @@ class Window(list):
 
 priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
+
 class NeuralNetwork:
 
 	def __init__(self, endTimeStamp, windowSize = 10, numFeatures = 100, numDataPoints = 1000, frequency = 3600, nnType = 'ff', whichData=['price'], normalize=True):
@@ -42,7 +43,7 @@ class NeuralNetwork:
 			
 		self.type = nnType
 		
-		def normalize(X, a, b):
+		def normalizeData(X, a, b):
 			"""
 				pass in list X and return a list normalized between a and b
 			"""
@@ -51,6 +52,13 @@ class NeuralNetwork:
 			r = maximum - minimum
 			n = b - a
 			return map(lambda x: a + (((x - minimum) / r) * n), X)
+
+		def refactor(inp, minimum, maximum, a, b, normalize):
+						if normalize:
+							return (maximum - minimum)*((inp - a)/(b - a)) + minimum
+						return inp
+		self.normalizeData = normalizeData
+		self.refactor = refactor
 
 		self.a = -10000
 		self.b = 10000
@@ -63,8 +71,8 @@ class NeuralNetwork:
 		self.percentChangeOfPercentChangePriceDataMin = min(self.percentChangeOfPercentChangePriceData)
 
 		if normalize:
-			self.normalizedPercentChangePriceData = normalize(self.percentChangePriceData, self.a, self.b)
-			self.normalizedPercentChangeOfPercentChangePriceData = normalize(self.percentChangeOfPercentChangePriceData, self.a, self.b)
+			self.normalizedPercentChangePriceData = self.normalizeData(self.percentChangePriceData, self.a, self.b)
+			self.normalizedPercentChangeOfPercentChangePriceData = self.normalizeData(self.percentChangeOfPercentChangePriceData, self.a, self.b)
 
 
 		if self.type == 'elman':
@@ -75,6 +83,7 @@ class NeuralNetwork:
 			self.net.init()
 		else:
 			self.net = nl.net.newff([[self.a, self.b] for i in range(self.windowSize)], [self.numFeatures, 1])
+
 
 	def toPercentChange(self, data):
 		""" takes in an list of price data and returns a list of percentage change price data """
@@ -88,7 +97,10 @@ class NeuralNetwork:
 			given a time_stamp and an n
 			returns two lists of length containing the predicted prices and percentChanges
 			return (percentChanges, predictedPrices) 
+			USE Second Derivative Method
 		"""
+		pdb.set_trace()
+
 		price = self.mappedPriceData[time_stamp]
 		index = self.mappedListData.index([time_stamp, price])
 		numDataPoints = self.numFeatures + self.windowSize + 1
@@ -99,18 +111,21 @@ class NeuralNetwork:
 		priceData = self.mappedListData[startIndex : index]
 		newPriceData = map(lambda elem: elem[1], priceData)
 		percentChangePriceData = self.toPercentChange(newPriceData)
+		percentChangePriceDataMax = max(percentChangePriceData)
+		percentChangePriceDataMin = min(percentChangePriceData)
+		normalizedPercentChangePriceData = self.normalizeData(percentChangePriceData, self.a, self.b)
 		percentChanges = {}
 		inputVector = Window(self.numFeatures)
 		targetVector = Window(self.numFeatures)
 		featureVector = Window(self.windowSize)
 		step = 0
 
-		while (step < len(percentChangePriceData) and len(percentChanges.keys()) < n):
+		while (step < len(normalizedPercentChangePriceData) and len(percentChanges.keys()) < n):
 			cur_ts = time_stamp + step * self.frequency
-			featureVector.append(percentChangePriceData[step])
+			featureVector.append(normalizedPercentChangePriceData[step])
 			if featureVector.isFull():
 				inputVector.append(list(featureVector))
-				targetVector.append(percentChangePriceData[step + 1])
+				targetVector.append(normalizedPercentChangePriceData[step + 1])
 				if inputVector.isFull() and targetVector.isFull():
 
 					inputs = np.array(inputVector).reshape(self.numFeatures, self.windowSize)
@@ -118,17 +133,22 @@ class NeuralNetwork:
 					err = self.net.train(inputs, targets, goal = 0.01)
 
 					# predict next step
-					testFeatureVector = featureVector[1:] + [percentChangePriceData[step + 1]]
+					testFeatureVector = featureVector[1:] + [normalizedPercentChangePriceData[step + 1]]
 					out = self.net.sim([np.array(testFeatureVector)])
-					percentChanges[cur_ts] = out[0][0]
-					percentChangePriceData.append(out[0][0])
+
+					output = self.refactor(out[0][0], percentChangePriceDataMin, \
+						percentChangePriceDataMax, self.a, self.b, self.normalize)
+					percentChanges[cur_ts] = output
+					normalizedPercentChangePriceData.append(out[0][0])
 			step += 1
+
 		predictedPrices = {}
 		lastPrice = newPriceData[len(priceData) - 1]
 		for p in percentChanges.keys():
 			newPrice = (percentChanges[p] * lastPrice) + lastPrice
 			predictedPrices[p] = newPrice
 			lastPrice = newPrice  
+		print percentChanges, predictedPrices
 		return percentChanges, predictedPrices
 
 	def simulateWithSecondDerivative(self):
@@ -167,15 +187,11 @@ class NeuralNetwork:
 					testFeatureVector = featureVector[1:] + [self.normalizedPercentChangeOfPercentChangePriceData[step + 1]]	
 					out = self.net.sim([np.array(testFeatureVector)])
 
-					def refactor(inp, minimum, maximum, a, b, normalize):
-						if normalize:
-							return (maximum - minimum)*((inp - a)/(b - a)) + minimum
-						return inp
 					def toDecimal(inp):
 						return inp / 100
 
 					#pdb.set_trace()
-					output = refactor(out[0][0], self.percentChangeOfPercentChangePriceDataMin, \
+					output = self.refactor(out[0][0], self.percentChangeOfPercentChangePriceDataMin, \
 						self.percentChangeOfPercentChangePriceDataMax, self.a, self.b, self.normalize)
 
 					predictedPPChanges.append(output)
@@ -245,10 +261,6 @@ class NeuralNetwork:
 
 	def simulateWithFirstDerivative(self):
 
-		def refactor(inp, minimum, maximum, a, b, normalize):
-			if normalize:
-				return (maximum - minimum)*((inp - a)/(b - a)) + minimum
-			return inp
 		def toDecimal(inp):
 			return inp / 100
 
@@ -289,7 +301,7 @@ class NeuralNetwork:
 					# predict next time step
 					testFeatureVector = featureVector[1:] + [self.normalizedPercentChangePriceData[step + 1]]	
 					out = self.net.sim([np.array(testFeatureVector)])
-					output = refactor(out[0][0], self.percentChangePriceDataMin, \
+					output = self.refactor(out[0][0], self.percentChangePriceDataMin, \
 					 self.percentChangePriceDataMax, self.a, self.b, self.normalize)
 
 					predictedPercentChanges.append(output)
@@ -351,8 +363,11 @@ def main():
 	print "Starting Neural Network Simulations"
 
 	basicNeuralNetwork1 = NeuralNetwork(1413230400, 6, 10, 500)
-	basicNeuralNetwork1.simulateWithSecondDerivative()
-	basicNeuralNetwork1.simulateWithFirstDerivative()
+	#basicNeuralNetwork1.simulateWithSecondDerivative()
+	#basicNeuralNetwork1.simulateWithFirstDerivative()
+
+	# predict
+	basicNeuralNetwork1.predictPrice(1411988400, 3)
 
 	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 12, 10, 500)
 	# basicNeuralNetwork1.simulateWithSecondDerivative()
