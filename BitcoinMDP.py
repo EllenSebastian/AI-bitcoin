@@ -58,7 +58,7 @@ class BitcoinMDP(util.MDP):
         for time in range(self.total_time + 1):
             for bitcoin in range(self.initial_bitcoins + 1):
                 for price in range(self.price_range[0], self.price_range[1] + self.price_resolution, self.price_resolution):
-                    for std in range(0, self.max_deviation, self.price_resolution):
+                    for std in range(0, self.max_deviation + 1, self.price_resolution):
                         self.states.append((time, bitcoin, price, std))
         print len(self.states)
 
@@ -92,8 +92,11 @@ class BitcoinMDP(util.MDP):
     def discount(self):
         return 1
 
+#mdp = BitcoinMDP(2, 2, 0, 1, [-2, 2], 1)
+#vio = ValueIteration()
+#vio.solve(mdp)
+#print vio.pi
 """
-mdp = BitcoinMDP(3, 3, 0, 1, [-2, 2], 2)
 mdp = BitcoinMDP(3, 3, 0, 1, [-4, 4], 2)
 >>>>>>> first pass at CSP
 vio = ValueIteration()
