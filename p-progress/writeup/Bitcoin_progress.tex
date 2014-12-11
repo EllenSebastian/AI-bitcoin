@@ -68,20 +68,25 @@ language=R,                     % the language of the code
  We can use our estimate for the future price of Bitcoin to choose an action that we believe will maximize our profit. These actions are simply, ``do nothing'', ``sell $X$ bitcoins'', or ``buy $X$ bitcoins''. Simple rule-based approaches, such as ``buy when the price will rise more than \$1 in the next hour, sell when the price will drop more than \$1 in the next hour, never sell at a loss'' imitate human decisionmaking and may be successful\footnote{http://arxiv-web3.library.cornell.edu/pdf/1410.1231v1.pdf}.  We will compare the success of a rule-based approach to a policy produced by an MDP.
  	
 \subsubsection*{Policy-based approach}										
- In this algorithm, we use Gaussian Processes (GP) and Markov Decision Process (MDP) to model our bitcoin trading problem. The basic idea is to use GP to predict a normal distribution of bitcoin price at the next timestamp. This will give us an estimate of the transition probabilities in our MDP model. After that, we run our MDP algorithm to get the best policy based on the price estimation. Given the learned policy, we are able to make trading decisions based on different states in real world. We further simplify our bitcoin trading problem to the following case. Suppose we are given M bitcoins at the beginning, our task is to sell all of them within a fixed time period T, and maximize the revenue we received. Also assume that when we place an order at time T, all of the shares placed will be sold at the average price of that time.
-\emph{ MDP specifications}:
+ In this algorithm, we use Gaussian Processes (GP) and Markov Decision Process (MDP) to model our bitcoin trading problem. The basic idea is to use GP to predict a normal distribution of bitcoin price at the next time step, which can be used to estimate the transition probabilities in our MDP model. We first construct the MDP model based on the following simplified model. Suppose we are given M bitcoins at the beginning, our task is to sell all of them within a fixed time period T, and maximize the revenue we received. Also assume that when we place an order at time T, all of the shares placed will be sold at the average price of that time.
+ 
+\emph{MDP specifications}:
 \begin{itemize}
-\item States: (time remaining, shares remaining, predicted price, standard deviation of predicted price)\\
- To limit our state space, we discretize each element in our state space. Depending on how large we want our state space to be, we can choose the resolution beforehand. For predicted price, we can define our range by looking at the real price range in the time period that we are interested in. For standard deviation, we calculate dp, the average absolute change between each successive timestamp, and choose the standard deviation to be [0, $\alpha \Delta p$], where $\alpha$ is a parameter we can experiment with.
- \item Actions: \{sell i bitcoins (0 < i < shares remaining), do nothing\}\\
- The resolution of bitcoin is the same as the one we chose for state space.
- \item Rewards(s, a, sâ€™): \#bitcoins sold in action a * s[predicted price]\\
- Rewards are calculated by the amount of bitcoins we chose to sell multiplied by the predicted price.
- \item Transition probabilities: $T(s, a, sâ€™) ~ N(s[\text{predicted price}], s[\text{standard deviation}]^2)$\\
- The probability of transition from a state to a new state follows the normal distribution whose mean is s[predicted price], standard deviation is s[standard deviation]. Since we are discretizing the states, we take the probability density and normalize it to give us an estimate on the transition probability.
- \item IsEnd(s): $s[\text{time remaining}] = 0$\\
+\item States: $(t, b, \Delta p, \sigma)$\\
+In the state representation, $t$ means time steps remaining, $b$ means number of bitcoins remaining, $\Delta p$ means the (predicted price - base price) at the next time step, $\sigma$ means the standard deviation of predicted price.
+To limit our state space, we discretize each element in our state space. Depending on how large we want our state space to be, we can choose the resolution beforehand. For predicted price, we can define our range by looking at the real price range in the time period that we are interested in. Based on different time step resolution, we adjust the scale of standard deviation accordingly.
+\item Actions: \{sell $i$ bitcoins $(0 \leq i < b)$\}\\
+The resolution of bitcoin is the same as the one we chose for state space.
+€™\item $\textrm{Rewards}(s, a, s)$: $-a \times s[\Delta p]$\\
+ Rewards are calculated by the amount of bitcoins we chose to sell multiplied by negative predicted price difference (selling bitcoins at the current time step when predicting the price will go up will incur a negative reward).
+ \item Transition probabilities: $T(s, a, s'€™) \sim N(s[\Delta p], s[\sigma]^2)$\\
+ The probability of transition from a state to a new state follows the normal distribution whose mean is $s[\Delta p]$, standard deviation is $s[\sigma]$. Since we are discretizing the states, we take the probability density and normalize it to give us an estimate on the transition probability. It's worth noting that since we don't have information on the transition probability with regard to predicted standard deviation, we assume it stays the same during state transitions.
+ \item IsEnd(s): $s[t] = 0$\\
  The simulation ends when time runs out.
  \end{itemize}
+ 
+The framework of this approach is depicted in Figure 1. After constructing the MDP model, we run value iteration on a specific MDP problem by fixing parameters (resolution, price range, etc.), which outputs an optimal policy. When running the simulation, we use GP to generate predictions on the price change as well as its standard deviation at the next time step, which is used to construct a current state and suggests an action based on the optimal policy.
+ 
 \section*{ Results}
  We chose to use different evaluation metrics than we had for the project proposal. In the project proposal, we used the Mean Squared Error on a price prediction; we examined raw price outputs instead of $\Delta p$. Our new results are therefore not comparable with our Oracle and Baseline results.
  	Here, we continue to use Mean Squared error, but instead of examining differences between price predictions, we examine differences between $\Delta p$ predictions. Additionally, we define a crude measure of accuracy in which we consider the algorithmâ€™s classification accuracy between negative and positive changes: 
