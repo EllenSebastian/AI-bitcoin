@@ -98,10 +98,7 @@ class RuleBasedActionPicker:
     # min_ts is the minimum timestamp we will ever examine (e.g. 1387174080 for after the crash)
     def randomSimulate(self,timestep = 60, ntimes=60*24, n=100, min_ts = None):
         profits = {} 
-<<<<<<< HEAD
         self.nBTC = 3
-=======
->>>>>>> total_wealth method of calculating profit
         self.timestep = timestep
         if min_ts is None: 
             min_ts = min(self.actualPrices.keys())
