@@ -307,6 +307,7 @@ class NeuralNetwork:
 				pl.figure(3)
 				pl.title(title + " Actual vs Predictions")
 				pl.subplot(211)
+				pdb.set_trace()
 				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
 
@@ -409,6 +410,7 @@ class NeuralNetwork:
 				pl.figure(3)
 				pl.title("Actual vs Predictions")
 				pl.subplot(211)
+				pdb.set_trace()
 				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
 
@@ -430,27 +432,24 @@ def main():
 	print "Starting Neural Network Simulations"
 
 	basicNeuralNetwork1 = NeuralNetwork(1413230400, 6, 10, 500)
-	#basicNeuralNetwork1.simulateWithSecondDerivative()
-	#basicNeuralNetwork1.simulateWithFirstDerivative()
-
+	basicNeuralNetwork1.simulateWithSecondDerivative() # 73%
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 48%
 	# predict
 	basicNeuralNetwork1.predictPrice2(1411988400, 3)
 
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 12, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
+	basicNeuralNetwork1 = NeuralNetwork(1413230400, 12, 10, 500) # 73.5%
+	basicNeuralNetwork1.simulateWithSecondDerivative()
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 48.2%
+	basicNeuralNetwork1 = NeuralNetwork(1413230400, 24, 10, 500)
+	basicNeuralNetwork1.simulateWithSecondDerivative() # 73.4%
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 48.6%
+	basicNeuralNetwork1 = NeuralNetwork(1413230400, 32, 10, 500)
+	basicNeuralNetwork1.simulateWithSecondDerivative() # 73.4%
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 48.3%
 
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 24, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
-
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 32, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
-
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 48, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
+	basicNeuralNetwork1 = NeuralNetwork(1413230400, 48, 10, 500)
+	basicNeuralNetwork1.simulateWithSecondDerivative() # 72.9%
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 49.2%
 
 
 if __name__ == "__main__": 

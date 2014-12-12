@@ -34,8 +34,8 @@ class RuleBasedActionPicker:
                 self.totalCash += priceData[ts]
                 self.nBTC -= 1
         elif (pricePrediction - priceData[ts]) > self.threshold:
-            if self.totalCash >= priceData[ts]:
-                print 'buy 1 bitcoin at p=', priceData[ts], 'nBTC=', self.nBTC, 'total_wealth=', self.total_wealth(priceData[ts])
+            if self.totalCash >= priceData[ts] and self.nBTC < self.maxnBTC:
+                print 'buy 1 bitcoin at p=', priceData[ts], 'nBTC=', self.nBTC, 'total_wealth=', self.total_wealth(priceData[ts]), 'ts',ts
                 # buy one
                 self.nBTC += 1
                 self.totalCash -= priceData[ts]
@@ -87,15 +87,18 @@ class RuleBasedActionPicker:
             action = self.simulate_ts(ts, pricePrediction, priceData)
             if action is not None: 
                 actions.append(action)
-        currentBtcWealth = self.actualPrices[ts_range[len(ts_range) - 1]] * self.nBTC
-        #if profit < 1: 
-        #	pdb.set_trace()
+        currentBtcWealth = priceData[ts_range[len(ts_range) - 1]] * self.nBTC
+
         #print 'initialBTC: {0}, nBTC: {1}, invested: {2}, income: {3}, profit%: {4}'.format(self.initialBTC, self.nBTC, self.invested, self.income, profit)
         profit = (self.totalCash + currentBtcWealth) / float(initialWealth)
+        if profit > 5: 
+        	pdb.set_trace()
         return {'profit': profit, 'nBTC': self.nBTC, 'cash': self.totalCash}
         #return {'profit':profit, 'nBTC': self.nBTC, 'invested': self.invested, 'income': self.income}
     # min_ts is the minimum timestamp we will ever examine (e.g. 1387174080 for after the crash)
     def randomSimulate(self,timestep = 60, ntimes=60*24, n=100, min_ts = None):
+    	cashReset = self.totalCash
+    	btcReset = self.nBTC
         profits = {} 
         self.timestep = timestep
         if min_ts is None: 
@@ -103,9 +106,9 @@ class RuleBasedActionPicker:
         allowedTs = [i for i in self.actualPrices.keys() if i > (min_ts + (timestep + 1) * ntimes)]
         #pdb.set_trace()
         for j in xrange(n):
+            self.totalCash = cashReset
+            self.nBTC = btcReset
             start = random.choice(allowedTs) # is actually the end, need to check the beginning
-            self.nBTC = 3
-            self.totalCash = 0
             boughtAt = start - timestep
             while boughtAt not in self.actualPrices.keys(): 
                 boughtAt -= timestep
@@ -133,10 +136,35 @@ class RuleBasedActionPicker:
 
 priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
-test = RuleBasedActionPicker(nBTC = 3, cash=10000, boughtAt = 300, maxnBTC = 10, buySellStep = 1, actualPrices = priceData, timestep = 60, predictionMethod = 'perfect')
-profits = test.randomSimulate(timestep=3600,ntimes = 24   * 30, n=100, min_ts = 1387174080) # 1.0158806245527092
-pdb.set_trace()
+test = RuleBasedActionPicker(nBTC = 0, cash=10000, boughtAt = 0, maxnBTC = 10, buySellStep = 1, actualPrices = priceData, timestep = 3600, predictionMethod = 'perfect')
+#profits = test.randomSimulate(timestep=3600,ntimes = 24   * 30, n=100, min_ts = 1387174080) # 1.0158806245527092
+#pdb.set_trace()
+
+
+# test from dec 16 until present
+#ts_range = range(1387174080, max(priceData.keys()) - 7200, 3600)
+#price_subset = dataFetcher.aggregated_prices(priceData, max(ts_range), len(ts_range) + 3 ,3600, 'hash')
+#all_profit = test.simulate(ts_range, price_subset)
+
+print all_profit[1]
 
 
 # second index of profits is the avg. profit over 100 random examples after dec 13 2013.
+"""
+with perfect predictions: 
+monthly with timestep = 1 hour: 
+profits starting out with 3 btc and 0 cash, limit 10 btc: 1.78
+profits starting out with 0 btc an 1000 cash, limit 10 btc: 2.23, 2.18
+profits starting wiht 3 btc and 10000 cash, limit 10 btc: 1.15 (due to too much cash to start with) 
+from dec16,nov10, 33556.623177, starting out with 3 btc and $10000 limit 100
+from dec16,nov10, 31032.137177, starting out with 0 btc and $10000 limit 10
+from dec16,nov10, 33776.4359336, starting out with 0 btc and $10000 limit 100
+from dec16,nov10, 28679.019202, starting out with 0 btc and $10000 limit 5
+from dec16,nov10, 19541.2977818, starting out with 0 btc and $10000 limit 1
+from dec16,nov10, 33776.4359336, starting out with 0 btc and $10000 limit 100
+from dec16,nov10, 22201.365447, starting out with 0 btc and $1000 limit 100
+from dec16,nov10, 20460.2963286, starting out with 0 btc and $500 limit 100
 
+with neuralnet predictions; 
+
+"""
