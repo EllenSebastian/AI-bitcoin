@@ -99,7 +99,6 @@ class NeuralNetwork:
 			return (percentChanges, predictedPrices) 
 			USE Second Derivative Method
 		"""
-		pdb.set_trace()
 
 		price = self.mappedPriceData[time_stamp]
 		index = self.mappedListData.index([time_stamp, price])
@@ -203,18 +202,19 @@ class NeuralNetwork:
 					normalizedPercentChangeOfPercentChangePriceData.append(out[0][0])
 			step += 1
 
-		pdb.set_trace()
 		predictedPrices = {}
+		predictedPercentChanges = {}
 		lastPercentChange = percentChangePriceData[len(percentChangePriceData) - 1]
 		lastPrice = newPriceData[len(priceData) - 1]
 		for pp in percentChangeOfPercentChanges.keys():
 			newPercentChange = (percentChangeOfPercentChanges[pp] * lastPercentChange) + lastPercentChange
 			newPrice = (newPercentChange * lastPrice) + lastPrice
 			predictedPrices[pp] = newPrice
+			predictedPercentChanges[pp] = newPercentChange
 			lastPrice = newPrice
 			lastPercentChange = newPercentChange  
 		print predictedPrices
-		return predictedPrices
+		return predictedPrices, predictedPercentChanges
 
 
 
@@ -448,16 +448,16 @@ def main():
 
 	print "Starting Neural Network Simulations"
 
-	basicNeuralNetwork1 = NeuralNetwork(1413230400, 6, 10, 500)
+	basicNeuralNetwork1 = NeuralNetwork(1411430400, 6, 10, 500)
 	basicNeuralNetwork1.simulateWithSecondDerivative() # 73%
 	basicNeuralNetwork1.simulateWithFirstDerivative() # 48%
 	# predict
 	basicNeuralNetwork1.predictPrice2(1411988400, 3)
 
-	basicNeuralNetwork1 = NeuralNetwork(1413230400, 12, 10, 500) # 73.5%
+	basicNeuralNetwork1 = NeuralNetwork(1411430400, 12, 10, 500) # 73.5%
 	basicNeuralNetwork1.simulateWithSecondDerivative()
 	basicNeuralNetwork1.simulateWithFirstDerivative() # 48.2%
-	basicNeuralNetwork1 = NeuralNetwork(1413230400, 24, 10, 500)
+	basicNeuralNetwork1 = NeuralNetwork(1411430400, 24, 10, 500)
 	basicNeuralNetwork1.simulateWithSecondDerivative() # 73.4%
 	basicNeuralNetwork1.simulateWithFirstDerivative() # 48.6%
 	basicNeuralNetwork1 = NeuralNetwork(1413230400, 32, 10, 500)

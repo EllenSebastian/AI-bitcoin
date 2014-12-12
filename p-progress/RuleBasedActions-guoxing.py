@@ -1,9 +1,9 @@
 # sell at an observed trough (some decreases in the past and a predicted increase)
 # sell whenever you see a price higher than what you bought at 
-import NeuralNetwork, BuySellCSP, random, pickle, pdb, dataFetcher, linecache, math
+import NeuralNetwork, BuySellCSP, random, pickle, pdb, dataFetcher, linecache
 import numpy as np
 class RuleBasedActionPicker: 
-    def __init__(self, nBTC, cash, boughtAt, maxnBTC, buySellStep, actualPrices, timestep = 60, predictionMethod='NeuralNet', minProfit = 0.5):
+    def __init__(self, nBTC, boughtAt, maxnBTC, buySellStep, actualPrices, timestep = 60, predictionMethod='NeuralNet', minProfit = 0.5):
         self.nBTC = nBTC
         self.maxnBTC = maxnBTC
         self.boughtAt = boughtAt
@@ -17,7 +17,7 @@ class RuleBasedActionPicker:
         self.income = 0 
         self.minProfit = minProfit # min profit to sell
         self.threshold = 0
-        self.totalCash = cash
+        self.totalCash = 0
 
     def total_wealth(self, price):
         return self.totalCash + price * self.nBTC
@@ -34,8 +34,8 @@ class RuleBasedActionPicker:
                 self.totalCash += priceData[ts]
                 self.nBTC -= 1
         elif (pricePrediction - priceData[ts]) > self.threshold:
-            if self.totalCash >= priceData[ts] and self.nBTC < self.maxnBTC:
-                print 'buy 1 bitcoin at p=', priceData[ts], 'nBTC=', self.nBTC, 'total_wealth=', self.total_wealth(priceData[ts]), 'ts',ts
+            if self.totalCash >= priceData[ts]:
+                print 'buy 1 bitcoin at p=', priceData[ts], 'nBTC=', self.nBTC, 'total_wealth=', self.total_wealth(priceData[ts])
                 # buy one
                 self.nBTC += 1
                 self.totalCash -= priceData[ts]
@@ -66,15 +66,14 @@ class RuleBasedActionPicker:
 
     # return percent profit
     def simulate(self, ts_range, priceData): 
-        initialWealth = priceData[ts_range[0]] * self.nBTC + self.totalCash
-        #print 'initialBTCWealth = {0} * {1} = {2}'.format(priceData[ts_range[0]] , self.nBTC, initialBTCWealth)
-        fn, fp, tn, tp = 0,0,0,0
+        startWealth = self.total_wealth(priceData[ts_range[0]])
+        initialBTCWealth = priceData[ts_range[0]] * self.nBTC
+        print 'initialBTCWealth = {0} * {1} = {2}'.format(priceData[ts_range[0]] , self.nBTC, initialBTCWealth)
+
         # get price predcitions
         actions = [] 
-        net = NeuralNetwork.NeuralNetwork(endTimeStamp=max(ts_range)+50*self.timestep,windowSize=24,numFeatures=10,numDataPoints=len(ts_range) + 100,frequency=self.timestep)
         for ts in ts_range: 
             if (ts not in priceData) or (ts + self.timestep not in priceData):
-                print 'ts not in priceData'
                 continue
             if self.predictionMethod == 'perfectRandom': 
                 if random.random() > 0.5: 
@@ -84,35 +83,20 @@ class RuleBasedActionPicker:
             elif self.predictionMethod == 'perfect':
                 pricePrediction = priceData[ts + self.timestep]
             else: 
-                #net = NeuralNetwork.NeuralNetwork(endTimeStamp=ts+50*self.timestep,windowSize=24,numFeatures=10,numDataPoints=500,frequency=self.timestep)
-                res = net.predictPrice2(ts, 1) # ERROR :(
-                pricePrediction = res[0].values()[0]
-                predictedPriceDiff = pricePrediction - priceData[ts]
-                actualPriceDiff = priceData[ts + self.timestep] - priceData[ts]
-                if actualPriceDiff < 0:
-                    if predictedPriceDiff < 0: 
-                        tn += 1
-                    else:
-                        fp += 1
-                elif actualPriceDiff > 0: 
-                    if predictedPriceDiff < 0: 
-                        fn += 1
-                    else:
-                        tp += 1    
+                net = NeuralNetwork.NeuralNetwork(ts, priceData, 24, 10, 200)
+                pricePredition = net.predictPrice(ts, 1, priceData) # ERROR :(
             action = self.simulate_ts(ts, pricePrediction, priceData)
             if action is not None: 
                 actions.append(action)
-        currentBtcWealth = priceData[ts_range[len(ts_range) - 1]] * self.nBTC
-
+        currentBtcWealth = self.actualPrices[ts_range[len(ts_range) - 1]] * self.nBTC
+        profit = float(self.income + currentBtcWealth) / (self.invested + initialBTCWealth)
         #print 'initialBTC: {0}, nBTC: {1}, invested: {2}, income: {3}, profit%: {4}'.format(self.initialBTC, self.nBTC, self.invested, self.income, profit)
-        profit = (self.totalCash + currentBtcWealth) / float(initialWealth)
-        print 'tp',tp,'tn',tn,'fp',fp,'fn',fn, profit,'profit'
-        return {'profit': profit, 'nBTC': self.nBTC, 'cash': self.totalCash, 'predAccuracy': float(tp + tn) / float(tp+tn+fp+fn)} 
+        profit = (self.totalCash + currentBtcWealth) / float(initialBTCWealth)
+        profit = self.total_wealth(self.actualPrices[ts_range[len(ts_range) - 1]])/ startWealth 
+        return {'profit': profit, 'nBTC': self.nBTC, 'cash': self.totalCash}
         #return {'profit':profit, 'nBTC': self.nBTC, 'invested': self.invested, 'income': self.income}
     # min_ts is the minimum timestamp we will ever examine (e.g. 1387174080 for after the crash)
     def randomSimulate(self,timestep = 60, ntimes=60*24, n=100, min_ts = None):
-    	cashReset = self.totalCash
-    	btcReset = self.nBTC
         profits = {} 
         self.timestep = timestep
         if min_ts is None: 
@@ -120,8 +104,6 @@ class RuleBasedActionPicker:
         allowedTs = [i for i in self.actualPrices.keys() if i > (min_ts + (timestep + 1) * ntimes)]
         #pdb.set_trace()
         for j in xrange(n):
-            self.totalCash = cashReset
-            self.nBTC = btcReset
             start = random.choice(allowedTs) # is actually the end, need to check the beginning
             boughtAt = start - timestep
             while boughtAt not in self.actualPrices.keys(): 
@@ -150,41 +132,9 @@ class RuleBasedActionPicker:
 
 priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
-test = RuleBasedActionPicker(nBTC = 0, cash=10000, boughtAt = 0, maxnBTC = 10, buySellStep = 1, actualPrices = priceData, timestep = 3600, predictionMethod = 'neuralnet')
-profits = test.randomSimulate(timestep=3600,ntimes = 24   * 30, n=100, min_ts = 1387174080) # 1.0158806245527092
+test = RuleBasedActionPicker(nBTC = 3, boughtAt = 300, maxnBTC = 10, buySellStep = 1, actualPrices = priceData, timestep = 60, predictionMethod = 'perfect')
+profits = test.randomSimulate(timestep=3600,ntimes = 24 * 30 , n=100, min_ts = 1387174080) # 1.0158806245527092
 pdb.set_trace()
 
 
-## test from dec 16 until present
-#ts_range = range(1387174080, max(priceData.keys()) - 7200, 3600)
-price_subset = dataFetcher.aggregated_prices(priceData, max(ts_range), len(ts_range) + 3 ,3600, 'hash')
-all_profit = test.simulate(ts_range, price_subset)
-pdb.set_trace()
-#print all_profit[1]
 
-
-# second index of profits is the avg. profit over 100 random examples after dec 13 2013.
-"""
-with perfect predictions: 
-monthly with timestep = 1 hour: 
-profits starting out with 3 btc and 0 cash, limit 10 btc: 1.78
-profits starting out with 0 btc an 1000 cash, limit 10 btc: 2.23, 2.18
-profits starting wiht 3 btc and 10000 cash, limit 10 btc: 1.15 (due to too much cash to start with) 
-from dec16,nov10, 33556.623177, starting out with 3 btc and $10000 limit 100
-from dec16,nov10, 31032.137177, starting out with 0 btc and $10000 limit 10
-from dec16,nov10, 33776.4359336, starting out with 0 btc and $10000 limit 100
-from dec16,nov10, 28679.019202, starting out with 0 btc and $10000 limit 5
-from dec16,nov10, 19541.2977818, starting out with 0 btc and $10000 limit 1
-from dec16,nov10, 33776.4359336, starting out with 0 btc and $10000 limit 100
-from dec16,nov10, 22201.365447, starting out with 0 btc and $1000 limit 100
-from dec16,nov10, 20460.2963286, starting out with 0 btc and $500 limit 100
-
-with neuralnet predictions; 
-
-form dec16, 0btc $10000 limit 
-"""
-
-
-#ts = 1403610960
-#net = NeuralNetwork.NeuralNetwork(endTimeStamp=ts + 50*3600,windowSize=24, numFeatures=10, numDataPoints=500, frequency=3600)
-#pricePredition = net.predictPrice(ts, 1) # ERROR :(
