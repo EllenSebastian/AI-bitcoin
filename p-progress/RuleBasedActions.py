@@ -1,6 +1,6 @@
 # sell at an observed trough (some decreases in the past and a predicted increase)
 # sell whenever you see a price higher than what you bought at 
-import NeuralNetwork, BuySellCSP, random, pickle, pdb, dataFetcher, linecache
+import NeuralNetwork, BuySellCSP, random, pickle, pdb, dataFetcher, linecache, math
 import numpy as np
 class RuleBasedActionPicker: 
     def __init__(self, nBTC, boughtAt, maxnBTC, buySellStep, actualPrices, timestep = 60, predictionMethod='NeuralNet', minProfit = 0.5):
@@ -92,13 +92,15 @@ class RuleBasedActionPicker:
         profit = float(self.income + currentBtcWealth) / (self.invested + initialBTCWealth)
         #print 'initialBTC: {0}, nBTC: {1}, invested: {2}, income: {3}, profit%: {4}'.format(self.initialBTC, self.nBTC, self.invested, self.income, profit)
         profit = (self.totalCash + currentBtcWealth) / float(initialBTCWealth)
-        profit = self.total_wealth(self.actualPrices[ts_range[len(ts_range) - 1]])/ startWealth 
+        if profit > 5: 
+        	pdb.set_trace()
+        #profit = self.total_wealth(self.actualPrices[ts_range[len(ts_range) - 1]])/ startWealth 
+
         return {'profit': profit, 'nBTC': self.nBTC, 'cash': self.totalCash}
         #return {'profit':profit, 'nBTC': self.nBTC, 'invested': self.invested, 'income': self.income}
     # min_ts is the minimum timestamp we will ever examine (e.g. 1387174080 for after the crash)
     def randomSimulate(self,timestep = 60, ntimes=60*24, n=100, min_ts = None):
         profits = {} 
-        self.nBTC = 3
         self.timestep = timestep
         if min_ts is None: 
             min_ts = min(self.actualPrices.keys())
@@ -106,6 +108,8 @@ class RuleBasedActionPicker:
         #pdb.set_trace()
         for j in xrange(n):
             start = random.choice(allowedTs) # is actually the end, need to check the beginning
+            self.nBTC = 3
+            self.totalCash = 0
             boughtAt = start - timestep
             while boughtAt not in self.actualPrices.keys(): 
                 boughtAt -= timestep
@@ -134,7 +138,7 @@ class RuleBasedActionPicker:
 priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
 test = RuleBasedActionPicker(nBTC = 3, boughtAt = 300, maxnBTC = 10, buySellStep = 1, actualPrices = priceData, timestep = 60, predictionMethod = 'perfect')
-profits = test.randomSimulate(timestep=3600,ntimes = 24 * 30 , n=100, min_ts = 1387174080) # 1.0158806245527092
+profits = test.randomSimulate(timestep=3600,ntimes = 24   * 30, n=100, min_ts = 1387174080) # 1.0158806245527092
 pdb.set_trace()
 
 
