@@ -410,7 +410,24 @@ class NeuralNetwork:
 				pl.figure(3)
 				pl.title("Actual vs Predictions")
 				pl.subplot(211)
+				trimmedpp = []
+				trimmedap = []
+				for i in predictedPercentChanges:
+					if abs(i) < 25: 
+						trimmedpp.append(i)
+					elif i < 0: 
+						trimmedpp.append(-25)
+					elif i > 0:
+						trimmedpp.append(25)
+				for i in actualPercentChanges:
+					if abs(i) < 25: 
+						trimmedap.append(i)
+					elif i < 0: 
+						trimmedap.append(-25)
+					elif i > 0:
+						trimmedpp.append(25)
 				pdb.set_trace()
+
 				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
 
