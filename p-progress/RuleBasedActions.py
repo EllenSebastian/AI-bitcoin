@@ -3,7 +3,7 @@
 import NeuralNetwork, BuySellCSP, random, pickle, pdb, dataFetcher, linecache, math
 import numpy as np
 class RuleBasedActionPicker: 
-    def __init__(self, nBTC, boughtAt, maxnBTC, buySellStep, actualPrices, timestep = 60, predictionMethod='NeuralNet', minProfit = 0.5):
+    def __init__(self, nBTC, cash, boughtAt, maxnBTC, buySellStep, actualPrices, timestep = 60, predictionMethod='NeuralNet', minProfit = 0.5):
         self.nBTC = nBTC
         self.maxnBTC = maxnBTC
         self.boughtAt = boughtAt
@@ -17,7 +17,7 @@ class RuleBasedActionPicker:
         self.income = 0 
         self.minProfit = minProfit # min profit to sell
         self.threshold = 0
-        self.totalCash = 0
+        self.totalCash = cash
 
     def total_wealth(self, price):
         return self.totalCash + price * self.nBTC
@@ -66,9 +66,8 @@ class RuleBasedActionPicker:
 
     # return percent profit
     def simulate(self, ts_range, priceData): 
-        startWealth = self.total_wealth(priceData[ts_range[0]])
-        initialBTCWealth = priceData[ts_range[0]] * self.nBTC
-        print 'initialBTCWealth = {0} * {1} = {2}'.format(priceData[ts_range[0]] , self.nBTC, initialBTCWealth)
+        initialWealth = priceData[ts_range[0]] * self.nBTC + self.totalCash
+        #print 'initialBTCWealth = {0} * {1} = {2}'.format(priceData[ts_range[0]] , self.nBTC, initialBTCWealth)
 
         # get price predcitions
         actions = [] 
@@ -89,13 +88,10 @@ class RuleBasedActionPicker:
             if action is not None: 
                 actions.append(action)
         currentBtcWealth = self.actualPrices[ts_range[len(ts_range) - 1]] * self.nBTC
-        profit = float(self.income + currentBtcWealth) / (self.invested + initialBTCWealth)
+        #if profit < 1: 
+        #	pdb.set_trace()
         #print 'initialBTC: {0}, nBTC: {1}, invested: {2}, income: {3}, profit%: {4}'.format(self.initialBTC, self.nBTC, self.invested, self.income, profit)
-        profit = (self.totalCash + currentBtcWealth) / float(initialBTCWealth)
-        if profit > 5: 
-        	pdb.set_trace()
-        #profit = self.total_wealth(self.actualPrices[ts_range[len(ts_range) - 1]])/ startWealth 
-
+        profit = (self.totalCash + currentBtcWealth) / float(initialWealth)
         return {'profit': profit, 'nBTC': self.nBTC, 'cash': self.totalCash}
         #return {'profit':profit, 'nBTC': self.nBTC, 'invested': self.invested, 'income': self.income}
     # min_ts is the minimum timestamp we will ever examine (e.g. 1387174080 for after the crash)
@@ -137,7 +133,7 @@ class RuleBasedActionPicker:
 
 priceData = pickle.load(open('../data/bitcoin_prices.pickle'))
 
-test = RuleBasedActionPicker(nBTC = 3, boughtAt = 300, maxnBTC = 10, buySellStep = 1, actualPrices = priceData, timestep = 60, predictionMethod = 'perfect')
+test = RuleBasedActionPicker(nBTC = 3, cash=10000, boughtAt = 300, maxnBTC = 10, buySellStep = 1, actualPrices = priceData, timestep = 60, predictionMethod = 'perfect')
 profits = test.randomSimulate(timestep=3600,ntimes = 24   * 30, n=100, min_ts = 1387174080) # 1.0158806245527092
 pdb.set_trace()
 
