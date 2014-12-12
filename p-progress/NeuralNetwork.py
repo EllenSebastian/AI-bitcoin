@@ -151,6 +151,73 @@ class NeuralNetwork:
 		print percentChanges, predictedPrices
 		return percentChanges, predictedPrices
 
+	def predictPrice2(self, time_stamp, n = 1):
+		"""
+			given a time_stamp and an n
+			returns two lists of length containing the predicted prices and percentChanges
+			return (percentChanges, predictedPrices) 
+			USE Second Derivative Method
+		"""
+
+		price = self.mappedPriceData[time_stamp]
+		index = self.mappedListData.index([time_stamp, price])
+		numDataPoints = self.numFeatures + self.windowSize + 2
+		startIndex = index - numDataPoints
+		if (startIndex < 0):
+			print "please use a later time stamp. there are not enough data points in the past to train on."
+			return 
+		priceData = self.mappedListData[startIndex : index]
+		newPriceData = map(lambda elem: elem[1], priceData)
+		percentChangePriceData = self.toPercentChange(newPriceData)
+		percentChangeOfPercentChangePriceData = self.toPercentChange(percentChangePriceData)
+		dataMax = max(percentChangeOfPercentChangePriceData)
+		dataMin = min(percentChangeOfPercentChangePriceData)
+		normalizedPercentChangeOfPercentChangePriceData = self.normalizeData(percentChangeOfPercentChangePriceData, \
+			self.a, self.b)
+		percentChangeOfPercentChanges = {}
+		inputVector = Window(self.numFeatures)
+		targetVector = Window(self.numFeatures)
+		featureVector = Window(self.windowSize)
+		step = 0
+
+		while (step < len(normalizedPercentChangeOfPercentChangePriceData) and len(percentChangeOfPercentChanges.keys()) < n):
+			cur_ts = time_stamp + step * self.frequency
+			featureVector.append(normalizedPercentChangeOfPercentChangePriceData[step])
+
+			if featureVector.isFull():
+				inputVector.append(list(featureVector))
+				targetVector.append(normalizedPercentChangeOfPercentChangePriceData[step + 1])
+				if inputVector.isFull() and targetVector.isFull():
+
+					inputs = np.array(inputVector).reshape(self.numFeatures, self.windowSize)
+					targets = np.array(targetVector).reshape(self.numFeatures, 1)
+					err = self.net.train(inputs, targets, goal = 0.01)
+
+					# predict next step
+					testFeatureVector = featureVector[1:] + [normalizedPercentChangeOfPercentChangePriceData[step + 1]]
+					out = self.net.sim([np.array(testFeatureVector)])
+
+					output = self.refactor(out[0][0], dataMin, \
+						dataMax, self.a, self.b, self.normalize)
+					percentChangeOfPercentChanges[cur_ts] = output
+					normalizedPercentChangeOfPercentChangePriceData.append(out[0][0])
+			step += 1
+
+		pdb.set_trace()
+		predictedPrices = {}
+		lastPercentChange = percentChangePriceData[len(percentChangePriceData) - 1]
+		lastPrice = newPriceData[len(priceData) - 1]
+		for pp in percentChangeOfPercentChanges.keys():
+			newPercentChange = (percentChangeOfPercentChanges[pp] * lastPercentChange) + lastPercentChange
+			newPrice = (newPercentChange * lastPrice) + lastPrice
+			predictedPrices[pp] = newPrice
+			lastPrice = newPrice
+			lastPercentChange = newPercentChange  
+		print predictedPrices
+		return predictedPrices
+
+
+
 	def simulateWithSecondDerivative(self):
 		"""
 		identical to simulateWithFirstDerivative
@@ -367,7 +434,7 @@ def main():
 	#basicNeuralNetwork1.simulateWithFirstDerivative()
 
 	# predict
-	basicNeuralNetwork1.predictPrice(1411988400, 3)
+	basicNeuralNetwork1.predictPrice2(1411988400, 3)
 
 	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 12, 10, 500)
 	# basicNeuralNetwork1.simulateWithSecondDerivative()
