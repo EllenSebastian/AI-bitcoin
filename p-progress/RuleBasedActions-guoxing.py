@@ -1,6 +1,6 @@
 # sell at an observed trough (some decreases in the past and a predicted increase)
 # sell whenever you see a price higher than what you bought at 
-import NeuralNetwork, BuySellCSP, random, pickle, pdb, dataFetcher, linecache, math
+import NeuralNetwork, BuySellCSP, random, pickle, pdb, dataFetcher, linecache
 import numpy as np
 class RuleBasedActionPicker: 
     def __init__(self, nBTC, boughtAt, maxnBTC, buySellStep, actualPrices, timestep = 60, predictionMethod='NeuralNet', minProfit = 0.5):
@@ -98,7 +98,6 @@ class RuleBasedActionPicker:
     # min_ts is the minimum timestamp we will ever examine (e.g. 1387174080 for after the crash)
     def randomSimulate(self,timestep = 60, ntimes=60*24, n=100, min_ts = None):
         profits = {} 
-        self.nBTC = 3
         self.timestep = timestep
         if min_ts is None: 
             min_ts = min(self.actualPrices.keys())
@@ -138,5 +137,4 @@ profits = test.randomSimulate(timestep=3600,ntimes = 24 * 30 , n=100, min_ts = 1
 pdb.set_trace()
 
 
-# second index of profits is the avg. profit over 100 random examples after dec 13 2013.
 
