@@ -261,6 +261,7 @@ class NeuralNetwork:
 					output = self.refactor(out[0][0], self.percentChangeOfPercentChangePriceDataMin, \
 						self.percentChangeOfPercentChangePriceDataMax, self.a, self.b, self.normalize)
 
+					pdb.set_trace()
 					predictedPPChanges.append(output)
 					actualPPChanges.append(self.percentChangeOfPercentChangePriceData[step + 2])
 
@@ -430,11 +431,11 @@ def main():
 	print "Starting Neural Network Simulations"
 
 	basicNeuralNetwork1 = NeuralNetwork(1413230400, 6, 10, 500)
-	#basicNeuralNetwork1.simulateWithSecondDerivative()
+	basicNeuralNetwork1.simulateWithSecondDerivative()
 	#basicNeuralNetwork1.simulateWithFirstDerivative()
 
 	# predict
-	basicNeuralNetwork1.predictPrice2(1411988400, 3)
+	#basicNeuralNetwork1.predictPrice2(1411988400, 3)
 
 	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 12, 10, 500)
 	# basicNeuralNetwork1.simulateWithSecondDerivative()
