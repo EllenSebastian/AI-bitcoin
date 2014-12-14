@@ -99,7 +99,6 @@ class NeuralNetwork:
 			return (percentChanges, predictedPrices) 
 			USE Second Derivative Method
 		"""
-		pdb.set_trace()
 
 		price = self.mappedPriceData[time_stamp]
 		index = self.mappedListData.index([time_stamp, price])
@@ -203,18 +202,19 @@ class NeuralNetwork:
 					normalizedPercentChangeOfPercentChangePriceData.append(out[0][0])
 			step += 1
 
-		pdb.set_trace()
 		predictedPrices = {}
+		predictedPercentChanges = {}
 		lastPercentChange = percentChangePriceData[len(percentChangePriceData) - 1]
 		lastPrice = newPriceData[len(priceData) - 1]
 		for pp in percentChangeOfPercentChanges.keys():
 			newPercentChange = (percentChangeOfPercentChanges[pp] * lastPercentChange) + lastPercentChange
 			newPrice = (newPercentChange * lastPrice) + lastPrice
 			predictedPrices[pp] = newPrice
+			predictedPercentChanges[pp] = newPercentChange
 			lastPrice = newPrice
 			lastPercentChange = newPercentChange  
 		print predictedPrices
-		return predictedPrices
+		return predictedPrices, predictedPercentChanges
 
 
 
@@ -308,6 +308,7 @@ class NeuralNetwork:
 				pl.figure(3)
 				pl.title(title + " Actual vs Predictions")
 				pl.subplot(211)
+				pdb.set_trace()
 				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
 
@@ -410,6 +411,24 @@ class NeuralNetwork:
 				pl.figure(3)
 				pl.title("Actual vs Predictions")
 				pl.subplot(211)
+				trimmedpp = []
+				trimmedap = []
+				for i in predictedPercentChanges:
+					if abs(i) < 25: 
+						trimmedpp.append(i)
+					elif i < 0: 
+						trimmedpp.append(-25)
+					elif i > 0:
+						trimmedpp.append(25)
+				for i in actualPercentChanges:
+					if abs(i) < 25: 
+						trimmedap.append(i)
+					elif i < 0: 
+						trimmedap.append(-25)
+					elif i > 0:
+						trimmedpp.append(25)
+				pdb.set_trace()
+
 				pl.plot(range(len(predictedPercentChanges)), predictedPercentChanges, 'ro', \
 					range(len(actualPercentChanges)), actualPercentChanges, 'bs')
 
@@ -430,28 +449,32 @@ def main():
 
 	print "Starting Neural Network Simulations"
 
+<<<<<<< HEAD
 	basicNeuralNetwork1 = NeuralNetwork(1413230400, 6, 10, 500)
 	basicNeuralNetwork1.simulateWithSecondDerivative()
 	#basicNeuralNetwork1.simulateWithFirstDerivative()
 
+=======
+	basicNeuralNetwork1 = NeuralNetwork(1411430400, 6, 10, 500)
+	basicNeuralNetwork1.simulateWithSecondDerivative() # 73%
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 48%
+>>>>>>> 2c7b2081ae523a8c62f23ba50d154644ff8d7f82
 	# predict
 	#basicNeuralNetwork1.predictPrice2(1411988400, 3)
 
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 12, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
+	basicNeuralNetwork1 = NeuralNetwork(1411430400, 12, 10, 500) # 73.5%
+	basicNeuralNetwork1.simulateWithSecondDerivative()
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 48.2%
+	basicNeuralNetwork1 = NeuralNetwork(1411430400, 24, 10, 500)
+	basicNeuralNetwork1.simulateWithSecondDerivative() # 73.4%
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 48.6%
+	basicNeuralNetwork1 = NeuralNetwork(1413230400, 32, 10, 500)
+	basicNeuralNetwork1.simulateWithSecondDerivative() # 73.4%
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 48.3%
 
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 24, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
-
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 32, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
-
-	# basicNeuralNetwork1 = NeuralNetwork(1413230400, 48, 10, 500)
-	# basicNeuralNetwork1.simulateWithSecondDerivative()
-	# basicNeuralNetwork1.simulateWithFirstDerivative()
+	basicNeuralNetwork1 = NeuralNetwork(1413230400, 48, 10, 500)
+	basicNeuralNetwork1.simulateWithSecondDerivative() # 72.9%
+	basicNeuralNetwork1.simulateWithFirstDerivative() # 49.2%
 
 
 if __name__ == "__main__": 

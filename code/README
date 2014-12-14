@@ -1,0 +1,23 @@
+files: 
+	BitcoinCSP.py - defines a CSP that optimally sells (not buys) Bicoins.
+	BitcoinMDP.py - defines an MDP that optimally sells (not buys) Bitcoins.
+	BuySellCSP-test.py - tests BuySellCSP.py.
+	BuySellCSP.py - defines a CSP that optimally buys and sells Bitcoins. 
+	CSP.py - from the CSP assignment. Defines a base CSP.
+	CSPsolver.py - from the CSP assignment. Solves CSPs.
+	MDPutil.py - from the MDP assignment. Defines and solves a generic MDP.
+	NeuralNetwork.py - defines and tests a neural network to predict Bitcoin prices. 
+	PolicyTest.py - tests a policy and outputs its profit vs. a maximum theoretical profit. 
+	PricePredictor.py - bundles many methods of price prediction in one class.
+	Regression.py - implements price prediction through regression.
+	RuleBasedActions.py - chooses actions based on several rules and calculates profit. 
+	SupportVector.py - predicts prices using Support Vector machines. 
+	dataFetcher.py - class that implements several methods for obtaining, aggregating and interpolating data. 
+
+
+Most of the parameters for testing our code are located in the code itself and not as command line arguments. However, you can see some examples of our code by running: 
+
+BuySellCSP-test.py
+NeuralNetwork.py
+Regression.py
+RuleBasedActions.py
