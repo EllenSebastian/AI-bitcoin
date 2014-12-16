@@ -34,6 +34,7 @@ class priceCollector:
 		buyPrice = self.priceFromURL('https://api.coinbase.com/v1/prices/buy?qty=1')
 		sellPrice = self.priceFromURL('https://api.coinbase.com/v1/prices/sell?qty=1')
 		self.out.write('{0},{1},{2}\n'.format(runtime, buyPrice, sellPrice))
+		self.out.flush()
 		self.times_run += 1 
 
 	def do_every (self, interval, worker_func, iterations = 0):
