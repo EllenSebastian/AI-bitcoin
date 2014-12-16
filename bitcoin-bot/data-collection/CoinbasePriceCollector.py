@@ -16,8 +16,8 @@ class priceCollector:
 		self.frequency = frequency
 		self.outfile = outfile
 		self.times_run = 0
-		self.out = open(outfile + '0.csv','w') 
 		self.outfileLength = outfileLength
+		self.out = open(self.outfile + '0.csv','w')
 
 	def priceFromURL(self, url):
 		response = urllib2.urlopen(url)
@@ -26,10 +26,10 @@ class priceCollector:
 	def record_price(self):
 		runtime = int(round(time.time()))
 		print 'running at {0}'.format(time.time())
-		if self.times_run % self.outfileLength == 0 and self.times_run > 0: 
-			newfilename = self.outfile + str(self.times_run / self.outfileLength) + '.csv'
-			print 'opening new file: ' + newfilename
+		if self.times_run % self.outfileLength == 0: 
+			newfilename = self.outfile + str(int(time.time())) + '.csv'
 			self.out.close()
+			print 'opening new file: ' + newfilename
 			self.out = open(newfilename, 'w')
 		buyPrice = self.priceFromURL('https://api.coinbase.com/v1/prices/buy?qty=1')
 		sellPrice = self.priceFromURL('https://api.coinbase.com/v1/prices/sell?qty=1')
