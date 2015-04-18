@@ -1,0 +1,7 @@
+copy 3 to create enter sign
+drag to right and create func enter
+     userIsInTheeMiddle..= false
+     operandStack.append(
+
+above - 
+      var operandStack: Array<Double> = Array<Double>()

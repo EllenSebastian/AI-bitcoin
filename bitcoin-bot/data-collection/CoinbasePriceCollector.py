@@ -33,7 +33,8 @@ class priceCollector:
 			self.out = open(newfilename, 'w')
 		buyPrice = self.priceFromURL('https://api.coinbase.com/v1/prices/buy?qty=1')
 		sellPrice = self.priceFromURL('https://api.coinbase.com/v1/prices/sell?qty=1')
-		self.out.write('{0},{1},{2}\n'.format(runtime, buyPrice, sellPrice))
+		time1 = int(runtime - (runtime % self.frequency))
+		self.out.write('{0},{1},{2}\n'.format(time1, buyPrice, sellPrice))
 		self.out.flush()
 		self.times_run += 1 
 
